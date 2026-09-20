@@ -1,6 +1,7 @@
-import { productMockData } from "~/features/products/product.mock";
-import type { Product } from "~/features/products/product.types";
+import { productMockDataSource } from "~/features/products/product.mock-source";
 
-export async function getProducts(): Promise<Product[]> {
-  return [...productMockData];
+const productDataSource = productMockDataSource;
+
+export async function getProducts() {
+  return productDataSource.getProducts();
 }
