@@ -1,0 +1,2467 @@
+openapi: 3.1.0
+info:
+  title: Retail POS API
+  version: 1.0.0
+  description: |
+    API contract v1.0 untuk Retail POS & Inventory Management System.
+    Backend: Laravel API. Frontend: React SPA.
+    Authentication: Laravel Sanctum first-party SPA.
+    Money values pada API dikirim sebagai integer Rupiah (IDR), bukan float.
+servers:
+  - url: http://localhost:8000
+    description: Local development
+tags:
+  - name: Auth
+  - name: Company
+  - name: Users
+  - name: Roles
+  - name: Terminals
+  - name: Products
+  - name: Suppliers
+  - name: Purchases
+  - name: Inventory
+  - name: Sales
+  - name: Returns
+  - name: Expenses
+  - name: Reports
+  - name: Offline Sync
+
+paths:
+  /sanctum/csrf-cookie:
+    get:
+      tags: [Auth]
+      summary: Initialize Sanctum CSRF cookie
+      responses:
+        "204":
+          description: CSRF cookie initialized
+
+  /login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "204":
+          description: Login successful
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Logout current user
+      security:
+        - sanctum: []
+      responses:
+        "204":
+          description: Logout successful
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /api/v1/health:
+    get:
+      summary: API health check
+      responses:
+        "200":
+          description: Service health
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [status]
+                    properties:
+                      status:
+                        type: string
+                        enum: [ok]
+                      database:
+                        type: string
+                        enum: [ok, unavailable]
+                      redis:
+                        type: string
+                        enum: [ok, unavailable]
+
+  /api/v1/me:
+    get:
+      tags: [Auth]
+      summary: Current authenticated user
+      security:
+        - sanctum: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSingleResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /api/v1/company:
+    get:
+      tags: [Company]
+      summary: Get company profile
+      security:
+        - sanctum: []
+      responses:
+        "200":
+          description: Company profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySingleResponse"
+    patch:
+      tags: [Company]
+      summary: Update company profile
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyUpdateRequest"
+      responses:
+        "200":
+          description: Updated company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: List users
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Paginated users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCollectionResponse"
+    post:
+      tags: [Users]
+      summary: Create user
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Users]
+      summary: Update user
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/roles:
+    get:
+      tags: [Roles]
+      summary: List roles and permissions
+      security:
+        - sanctum: []
+      responses:
+        "200":
+          description: Roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleCollectionResponse"
+
+  /api/v1/terminals:
+    get:
+      tags: [Terminals]
+      summary: List registered terminals
+      security:
+        - sanctum: []
+      responses:
+        "200":
+          description: Terminals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminalCollectionResponse"
+    post:
+      tags: [Terminals]
+      summary: Register terminal
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TerminalCreateRequest"
+      responses:
+        "201":
+          description: Terminal registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminalSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/terminals/{terminalUuid}/cash-drawer-events:
+    post:
+      tags: [Terminals]
+      summary: Record cash drawer open event
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalUuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CashDrawerEventRequest"
+      responses:
+        "201":
+          description: Event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEventSingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/products:
+    get:
+      tags: [Products]
+      summary: List/search products
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: search
+          in: query
+          description: Search by SKU, barcode, or product name
+          schema: { type: string }
+        - name: category_id
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [name, -name, sku, -sku, updated_at, -updated_at]
+      responses:
+        "200":
+          description: Paginated products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductCollectionResponse"
+    post:
+      tags: [Products]
+      summary: Create product
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductWriteRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/products/{productId}:
+    get:
+      tags: [Products]
+      summary: Get product detail
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Products]
+      summary: Update product
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductWriteRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/products/{productId}/inventory-policy:
+    get:
+      tags: [Inventory]
+      summary: Get product inventory policy
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Inventory policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryPolicySingleResponse"
+    put:
+      tags: [Inventory]
+      summary: Create or replace product inventory policy
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryPolicyWriteRequest"
+      responses:
+        "200":
+          description: Inventory policy saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryPolicySingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/suppliers:
+    get:
+      tags: [Suppliers]
+      summary: List suppliers
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Paginated suppliers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierCollectionResponse"
+    post:
+      tags: [Suppliers]
+      summary: Create supplier
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierWriteRequest"
+      responses:
+        "201":
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/suppliers/{supplierId}:
+    get:
+      tags: [Suppliers]
+      summary: Get supplier
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/SupplierId"
+      responses:
+        "200":
+          description: Supplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Suppliers]
+      summary: Update supplier
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/SupplierId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierWriteRequest"
+      responses:
+        "200":
+          description: Supplier updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/products/{productId}/suppliers:
+    get:
+      tags: [Suppliers]
+      summary: Supplier history and latest purchase prices for product
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Product supplier information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSupplierCollectionResponse"
+
+  /api/v1/purchases:
+    get:
+      tags: [Purchases]
+      summary: List purchases
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: supplier_id
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, received, cancelled]
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Purchases
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseCollectionResponse"
+    post:
+      tags: [Purchases]
+      summary: Create purchase draft
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseCreateRequest"
+      responses:
+        "201":
+          description: Purchase draft created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/purchases/{purchaseId}:
+    get:
+      tags: [Purchases]
+      summary: Get purchase
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/PurchaseId"
+      responses:
+        "200":
+          description: Purchase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Purchases]
+      summary: Update purchase draft
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/PurchaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseUpdateRequest"
+      responses:
+        "200":
+          description: Updated purchase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseSingleResponse"
+        "409":
+          description: Purchase is no longer editable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/purchases/{purchaseId}/receive:
+    post:
+      tags: [Purchases]
+      summary: Finalize purchase receipt and add stock
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/PurchaseId"
+      responses:
+        "200":
+          description: Purchase received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseSingleResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/purchases/{purchaseId}/attachments:
+    post:
+      tags: [Purchases]
+      summary: Upload supplier invoice attachment
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/PurchaseId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Attachment uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseAttachmentSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/purchase-returns:
+    post:
+      tags: [Returns]
+      summary: Create purchase return
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseReturnCreateRequest"
+      responses:
+        "201":
+          description: Purchase return created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseReturnSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/inventory:
+    get:
+      tags: [Inventory]
+      summary: List current inventory
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: stock_status
+          in: query
+          schema:
+            type: string
+            enum: [all, out_of_stock, low_stock, normal]
+        - name: movement_class
+          in: query
+          schema:
+            type: string
+            enum: [slow, middle, fast]
+      responses:
+        "200":
+          description: Inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryCollectionResponse"
+
+  /api/v1/inventory/{productId}/movements:
+    get:
+      tags: [Inventory]
+      summary: Product stock movement history
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Stock movements
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockMovementCollectionResponse"
+
+  /api/v1/stock-adjustments:
+    post:
+      tags: [Inventory]
+      summary: Create and finalize stock adjustment
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockAdjustmentCreateRequest"
+      responses:
+        "201":
+          description: Adjustment completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockAdjustmentSingleResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/stock-opnames:
+    post:
+      tags: [Inventory]
+      summary: Start stock opname
+      security:
+        - sanctum: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Stock opname started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockOpnameSingleResponse"
+
+  /api/v1/stock-opnames/{opnameId}/complete:
+    post:
+      tags: [Inventory]
+      summary: Complete stock opname and create adjustments
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/OpnameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockOpnameCompleteRequest"
+      responses:
+        "200":
+          description: Stock opname completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockOpnameSingleResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/sales:
+    get:
+      tags: [Sales]
+      summary: List sales
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: cashier_id
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: payment_method
+          in: query
+          schema:
+            type: string
+            enum: [CASH, QRIS]
+        - name: search
+          in: query
+          description: Search sale number or client UUID
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated sales
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleCollectionResponse"
+    post:
+      tags: [Sales]
+      summary: Create and finalize online sale
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleCreateRequest"
+      responses:
+        "201":
+          description: Sale completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleSingleResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/sales/{saleId}:
+    get:
+      tags: [Sales]
+      summary: Get sale detail
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/SaleId"
+      responses:
+        "200":
+          description: Sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/sales/{saleId}/receipt:
+    get:
+      tags: [Sales]
+      summary: Get receipt data for printing or reprint
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/SaleId"
+      responses:
+        "200":
+          description: Receipt payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptSingleResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/sale-returns:
+    post:
+      tags: [Returns]
+      summary: Create non-destructive sale return/correction
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleReturnCreateRequest"
+      responses:
+        "201":
+          description: Sale return created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleReturnSingleResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/expenses:
+    get:
+      tags: [Expenses]
+      summary: List operating expenses
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: category_id
+          in: query
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseCollectionResponse"
+    post:
+      tags: [Expenses]
+      summary: Create operating expense
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseCreateRequest"
+      responses:
+        "201":
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/reports/sales-summary:
+    get:
+      tags: [Reports]
+      summary: Sales summary report
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+      responses:
+        "200":
+          description: Sales summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesSummaryReportResponse"
+
+  /api/v1/reports/sales-detail:
+    get:
+      tags: [Reports]
+      summary: Detailed sales report
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Detailed sales
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleCollectionResponse"
+
+  /api/v1/reports/profit-loss:
+    get:
+      tags: [Reports]
+      summary: Profit and loss report
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+        - name: compare_from
+          in: query
+          schema: { type: string, format: date }
+        - name: compare_to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Profit and loss
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfitLossReportResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/reports/{reportType}/export:
+    get:
+      tags: [Reports]
+      summary: Export report as PDF or XLSX
+      security:
+        - sanctum: []
+      parameters:
+        - name: reportType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [sales-summary, sales-detail, profit-loss]
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [pdf, xlsx]
+      responses:
+        "200":
+          description: Generated report file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/offline/bootstrap:
+    get:
+      tags: [Offline Sync]
+      summary: Get minimum dataset required for offline POS
+      security:
+        - sanctum: []
+      parameters:
+        - name: terminal_uuid
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Offline bootstrap payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfflineBootstrapResponse"
+
+  /api/v1/offline/changes:
+    get:
+      tags: [Offline Sync]
+      summary: Incremental offline catalog changes
+      security:
+        - sanctum: []
+      parameters:
+        - name: since
+          in: query
+          required: true
+          description: Last successful synchronization timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Incremental changes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfflineChangesResponse"
+
+  /api/v1/offline/sales-sync:
+    post:
+      tags: [Offline Sync]
+      summary: Synchronize locally completed sales
+      description: |
+        Idempotent batch sync menggunakan client_uuid.
+        Item dengan UUID yang sudah pernah diproses tidak dibuat ulang.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfflineSalesSyncRequest"
+      responses:
+        "200":
+          description: Per-sale synchronization result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfflineSalesSyncResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+components:
+  securitySchemes:
+    sanctum:
+      type: apiKey
+      in: cookie
+      name: laravel_session
+      description: Laravel Sanctum first-party SPA session cookie
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    SupplierId:
+      name: supplierId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    PurchaseId:
+      name: purchaseId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    SaleId:
+      name: saleId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    OpnameId:
+      name: opnameId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    TerminalUuid:
+      name: terminalUuid
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    FromDate:
+      name: from
+      in: query
+      required: true
+      schema: { type: string, format: date }
+    ToDate:
+      name: to
+      in: query
+      required: true
+      schema: { type: string, format: date }
+
+  responses:
+    Unauthenticated:
+      description: User is not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: User has no required permission
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with current domain state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    Money:
+      type: integer
+      format: int64
+      minimum: 0
+      description: Integer Rupiah (IDR). Never send floating-point money values.
+
+    SignedMoney:
+      type: integer
+      format: int64
+      description: Signed integer Rupiah (IDR).
+
+    Quantity:
+      type: number
+      format: decimal
+      minimum: 0
+      multipleOf: 0.001
+
+    SignedQuantity:
+      type: number
+      format: decimal
+      multipleOf: 0.001
+
+    PaginationMeta:
+      type: object
+      required: [current_page, per_page, total, last_page]
+      properties:
+        current_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
+
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        code:
+          type: string
+          nullable: true
+          examples: [INSUFFICIENT_STOCK]
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    ValidationErrorResponse:
+      type: object
+      required: [message, errors]
+      properties:
+        message:
+          type: string
+          example: Validation failed.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+          description: Username or email
+        password:
+          type: string
+          format: password
+
+    Permission:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+
+    Role:
+      type: object
+      required: [id, code, name]
+      properties:
+        id: { type: integer, format: int64 }
+        code: { type: string }
+        name: { type: string }
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+
+    User:
+      type: object
+      required: [id, name, username, is_active, roles, permissions]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        username: { type: string }
+        email:
+          type: string
+          format: email
+          nullable: true
+        is_active: { type: boolean }
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        permissions:
+          type: array
+          items:
+            type: string
+
+    UserSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/User"
+
+    UserCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    UserCreateRequest:
+      type: object
+      required: [name, username, password, role_ids]
+      properties:
+        name: { type: string }
+        username: { type: string }
+        email:
+          type: string
+          format: email
+          nullable: true
+        password:
+          type: string
+          minLength: 8
+        is_active:
+          type: boolean
+          default: true
+        role_ids:
+          type: array
+          minItems: 1
+          items: { type: integer, format: int64 }
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        username: { type: string }
+        email:
+          type: string
+          format: email
+          nullable: true
+        password:
+          type: string
+          minLength: 8
+        is_active: { type: boolean }
+        role_ids:
+          type: array
+          items: { type: integer, format: int64 }
+
+    RoleCollectionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+
+    Company:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        address: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        logo_url: { type: string, nullable: true }
+
+    CompanySingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Company"
+
+    CompanyUpdateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        address: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        logo_path: { type: string, nullable: true }
+
+    Terminal:
+      type: object
+      required: [terminal_uuid, name, is_active]
+      properties:
+        terminal_uuid:
+          type: string
+          format: uuid
+        name: { type: string }
+        device_name: { type: string, nullable: true }
+        is_active: { type: boolean }
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    TerminalCreateRequest:
+      type: object
+      required: [terminal_uuid, name]
+      properties:
+        terminal_uuid:
+          type: string
+          format: uuid
+        name: { type: string }
+        device_name: { type: string, nullable: true }
+
+    TerminalSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Terminal"
+
+    TerminalCollectionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Terminal"
+
+    CashDrawerEventRequest:
+      type: object
+      required: [event_type]
+      properties:
+        event_type:
+          type: string
+          enum: [manual_open, automatic_open]
+        reason:
+          type: string
+          nullable: true
+
+    AuditEvent:
+      type: object
+      required: [id, action, created_at]
+      properties:
+        id: { type: integer, format: int64 }
+        action: { type: string }
+        created_at: { type: string, format: date-time }
+
+    AuditEventSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/AuditEvent"
+
+    ProductUnit:
+      type: object
+      required:
+        [id, unit_id, unit_code, unit_name, conversion_to_base, selling_price, is_base, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        unit_id: { type: integer, format: int64 }
+        unit_code: { type: string }
+        unit_name: { type: string }
+        conversion_to_base: { type: number, format: decimal, exclusiveMinimum: 0 }
+        selling_price:
+          $ref: "#/components/schemas/Money"
+        is_base: { type: boolean }
+        is_active: { type: boolean }
+
+    ProductBarcode:
+      type: object
+      required: [id, barcode, is_primary]
+      properties:
+        id: { type: integer, format: int64 }
+        barcode: { type: string }
+        product_unit_id:
+          type: integer
+          format: int64
+          nullable: true
+        is_primary: { type: boolean }
+
+    Product:
+      type: object
+      required: [id, sku, name, is_active, units, barcodes]
+      properties:
+        id: { type: integer, format: int64 }
+        sku: { type: string }
+        name: { type: string }
+        category:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer, format: int64 }
+            name: { type: string }
+        size: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        variant_label: { type: string, nullable: true }
+        is_active: { type: boolean }
+        units:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductUnit"
+        barcodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductBarcode"
+        inventory:
+          $ref: "#/components/schemas/ProductInventorySummary"
+        updated_at:
+          type: string
+          format: date-time
+
+    ProductWriteRequest:
+      type: object
+      required: [sku, name, units]
+      properties:
+        sku: { type: string }
+        name: { type: string }
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+        size: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        variant_label: { type: string, nullable: true }
+        is_active:
+          type: boolean
+          default: true
+        units:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [unit_id, conversion_to_base, selling_price, is_base]
+            properties:
+              id:
+                type: integer
+                format: int64
+                nullable: true
+              unit_id: { type: integer, format: int64 }
+              conversion_to_base: { type: number, format: decimal, exclusiveMinimum: 0 }
+              selling_price:
+                $ref: "#/components/schemas/Money"
+              is_base: { type: boolean }
+              is_active:
+                type: boolean
+                default: true
+        barcodes:
+          type: array
+          items:
+            type: object
+            required: [barcode]
+            properties:
+              id:
+                type: integer
+                format: int64
+                nullable: true
+              barcode: { type: string }
+              product_unit_id:
+                type: integer
+                format: int64
+                nullable: true
+              is_primary:
+                type: boolean
+                default: false
+
+    ProductSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Product"
+
+    ProductCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    Supplier:
+      type: object
+      required: [id, code, name, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        code: { type: string }
+        name: { type: string }
+        address: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        is_active: { type: boolean }
+
+    SupplierWriteRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        address: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        is_active:
+          type: boolean
+          default: true
+
+    SupplierSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Supplier"
+
+    SupplierCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supplier"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    ProductSupplierInfo:
+      type: object
+      required: [supplier, latest_purchase_price]
+      properties:
+        supplier:
+          $ref: "#/components/schemas/Supplier"
+        latest_purchase_price:
+          allOf:
+            - $ref: "#/components/schemas/Money"
+          nullable: true
+        latest_purchase_date:
+          type: string
+          format: date
+          nullable: true
+
+    ProductSupplierCollectionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSupplierInfo"
+
+    PurchaseItemWrite:
+      type: object
+      required: [product_id, product_unit_id, quantity, unit_cost]
+      properties:
+        product_id: { type: integer, format: int64 }
+        product_unit_id: { type: integer, format: int64 }
+        quantity:
+          $ref: "#/components/schemas/Quantity"
+        unit_cost:
+          $ref: "#/components/schemas/Money"
+
+    PurchaseItem:
+      allOf:
+        - $ref: "#/components/schemas/PurchaseItemWrite"
+        - type: object
+          required: [id, base_quantity, base_unit_cost, subtotal]
+          properties:
+            id: { type: integer, format: int64 }
+            base_quantity:
+              $ref: "#/components/schemas/Quantity"
+            base_unit_cost:
+              $ref: "#/components/schemas/Money"
+            subtotal:
+              $ref: "#/components/schemas/Money"
+            product:
+              $ref: "#/components/schemas/Product"
+
+    Purchase:
+      type: object
+      required: [id, purchase_no, supplier, purchased_at, status, items, subtotal, total]
+      properties:
+        id: { type: integer, format: int64 }
+        purchase_no: { type: string }
+        supplier:
+          $ref: "#/components/schemas/Supplier"
+        purchased_at: { type: string, format: date }
+        supplier_invoice_no: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [draft, received, cancelled]
+        subtotal:
+          $ref: "#/components/schemas/Money"
+        total:
+          $ref: "#/components/schemas/Money"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseItem"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseAttachment"
+
+    PurchaseCreateRequest:
+      type: object
+      required: [supplier_id, purchased_at, items]
+      properties:
+        supplier_id: { type: integer, format: int64 }
+        purchased_at: { type: string, format: date }
+        supplier_invoice_no: { type: string, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PurchaseItemWrite"
+
+    PurchaseUpdateRequest:
+      $ref: "#/components/schemas/PurchaseCreateRequest"
+
+    PurchaseSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Purchase"
+
+    PurchaseCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Purchase"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    PurchaseAttachment:
+      type: object
+      required: [id, file_name, url]
+      properties:
+        id: { type: integer, format: int64 }
+        file_name: { type: string }
+        mime_type: { type: string, nullable: true }
+        url: { type: string }
+
+    PurchaseAttachmentSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/PurchaseAttachment"
+
+    PurchaseReturnCreateRequest:
+      type: object
+      required: [purchase_id, reason, items]
+      properties:
+        purchase_id: { type: integer, format: int64 }
+        reason: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [purchase_item_id, base_quantity]
+            properties:
+              purchase_item_id: { type: integer, format: int64 }
+              base_quantity:
+                $ref: "#/components/schemas/Quantity"
+
+    PurchaseReturn:
+      type: object
+      required: [id, return_no, purchase_id, status, returned_at]
+      properties:
+        id: { type: integer, format: int64 }
+        return_no: { type: string }
+        purchase_id: { type: integer, format: int64 }
+        status:
+          type: string
+          enum: [completed, cancelled]
+        reason: { type: string }
+        returned_at: { type: string, format: date-time }
+
+    PurchaseReturnSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/PurchaseReturn"
+
+    ProductInventorySummary:
+      type: object
+      nullable: true
+      properties:
+        quantity_base:
+          $ref: "#/components/schemas/Quantity"
+        average_cost:
+          $ref: "#/components/schemas/Money"
+        reorder_point:
+          $ref: "#/components/schemas/Quantity"
+        stock_status:
+          type: string
+          enum: [out_of_stock, low_stock, normal]
+        movement_class:
+          type: string
+          nullable: true
+          enum: [slow, middle, fast]
+
+    InventoryItem:
+      type: object
+      required: [product, quantity_base, stock_status]
+      properties:
+        product:
+          $ref: "#/components/schemas/Product"
+        quantity_base:
+          $ref: "#/components/schemas/Quantity"
+        average_cost:
+          $ref: "#/components/schemas/Money"
+        reorder_point:
+          $ref: "#/components/schemas/Quantity"
+        stock_status:
+          type: string
+          enum: [out_of_stock, low_stock, normal]
+        movement_class:
+          type: string
+          nullable: true
+          enum: [slow, middle, fast]
+
+    InventoryCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    StockMovement:
+      type: object
+      required: [id, movement_type, quantity_delta_base, occurred_at]
+      properties:
+        id: { type: integer, format: int64 }
+        movement_type:
+          type: string
+          enum:
+            [PURCHASE_RECEIVE, PURCHASE_RETURN, SALE, SALE_RETURN, STOCK_ADJUSTMENT, STOCK_OPNAME, DAMAGED, LOST]
+        quantity_delta_base:
+          $ref: "#/components/schemas/SignedQuantity"
+        unit_cost:
+          $ref: "#/components/schemas/Money"
+        notes: { type: string, nullable: true }
+        occurred_at: { type: string, format: date-time }
+
+    StockMovementCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockMovement"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    StockAdjustmentCreateRequest:
+      type: object
+      required: [reason_type, items]
+      properties:
+        reason_type:
+          type: string
+          enum: [correction, damaged, lost, found_stock, other]
+        notes: { type: string, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_id, adjustment_quantity_base]
+            properties:
+              product_id: { type: integer, format: int64 }
+              adjustment_quantity_base:
+                $ref: "#/components/schemas/SignedQuantity"
+
+    StockAdjustment:
+      type: object
+      required: [id, adjustment_no, reason_type, adjusted_at]
+      properties:
+        id: { type: integer, format: int64 }
+        adjustment_no: { type: string }
+        reason_type: { type: string }
+        notes: { type: string, nullable: true }
+        adjusted_at: { type: string, format: date-time }
+
+    StockAdjustmentSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/StockAdjustment"
+
+    StockOpnameCompleteRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_id, physical_quantity_base]
+            properties:
+              product_id: { type: integer, format: int64 }
+              physical_quantity_base:
+                $ref: "#/components/schemas/Quantity"
+
+    StockOpname:
+      type: object
+      required: [id, opname_no, status, started_at]
+      properties:
+        id: { type: integer, format: int64 }
+        opname_no: { type: string }
+        status:
+          type: string
+          enum: [in_progress, completed, cancelled]
+        started_at: { type: string, format: date-time }
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    StockOpnameSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/StockOpname"
+
+    InventoryPolicyWriteRequest:
+      type: object
+      required: [auto_reorder_point_enabled]
+      properties:
+        manual_reorder_point:
+          allOf:
+            - $ref: "#/components/schemas/Quantity"
+          nullable: true
+        lead_time_days:
+          type: integer
+          minimum: 0
+          nullable: true
+        safety_days:
+          type: integer
+          minimum: 0
+          nullable: true
+        auto_reorder_point_enabled:
+          type: boolean
+
+    InventoryPolicy:
+      allOf:
+        - $ref: "#/components/schemas/InventoryPolicyWriteRequest"
+        - type: object
+          properties:
+            calculated_reorder_point:
+              $ref: "#/components/schemas/Quantity"
+
+    InventoryPolicySingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/InventoryPolicy"
+
+    SaleItemWrite:
+      type: object
+      required: [product_id, product_unit_id, quantity, unit_price]
+      properties:
+        product_id: { type: integer, format: int64 }
+        product_unit_id: { type: integer, format: int64 }
+        quantity:
+          $ref: "#/components/schemas/Quantity"
+        unit_price:
+          $ref: "#/components/schemas/Money"
+        discount_amount:
+          $ref: "#/components/schemas/Money"
+
+    PaymentWrite:
+      type: object
+      required: [method, amount]
+      properties:
+        method:
+          type: string
+          enum: [CASH, QRIS]
+        amount:
+          $ref: "#/components/schemas/Money"
+        reference_no:
+          type: string
+          nullable: true
+
+    SaleCreateRequest:
+      type: object
+      required: [client_uuid, terminal_uuid, occurred_at, items, payments]
+      properties:
+        client_uuid:
+          type: string
+          format: uuid
+        terminal_uuid:
+          type: string
+          format: uuid
+        occurred_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SaleItemWrite"
+        payments:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PaymentWrite"
+
+    SaleItem:
+      type: object
+      required:
+        [id, product_id, sku, product_name, unit_name, quantity, base_quantity, unit_price, net_total, cost_total]
+      properties:
+        id: { type: integer, format: int64 }
+        product_id: { type: integer, format: int64 }
+        sku: { type: string }
+        product_name: { type: string }
+        unit_name: { type: string }
+        quantity:
+          $ref: "#/components/schemas/Quantity"
+        base_quantity:
+          $ref: "#/components/schemas/Quantity"
+        unit_price:
+          $ref: "#/components/schemas/Money"
+        discount_amount:
+          $ref: "#/components/schemas/Money"
+        net_total:
+          $ref: "#/components/schemas/Money"
+        cost_total:
+          $ref: "#/components/schemas/Money"
+
+    Payment:
+      type: object
+      required: [id, method, amount, paid_at]
+      properties:
+        id: { type: integer, format: int64 }
+        method:
+          type: string
+          enum: [CASH, QRIS]
+        amount:
+          $ref: "#/components/schemas/Money"
+        reference_no: { type: string, nullable: true }
+        paid_at: { type: string, format: date-time }
+
+    Sale:
+      type: object
+      required:
+        [id, client_uuid, sale_no, status, created_offline, subtotal, discount_total, grand_total, items, payments]
+      properties:
+        id: { type: integer, format: int64 }
+        client_uuid: { type: string, format: uuid }
+        sale_no: { type: string }
+        status:
+          type: string
+          enum: [completed, cancelled]
+        created_offline: { type: boolean }
+        cashier:
+          type: object
+          properties:
+            id: { type: integer, format: int64 }
+            name: { type: string }
+        terminal_uuid:
+          type: string
+          format: uuid
+        subtotal:
+          $ref: "#/components/schemas/Money"
+        discount_total:
+          $ref: "#/components/schemas/Money"
+        grand_total:
+          $ref: "#/components/schemas/Money"
+        gross_profit:
+          $ref: "#/components/schemas/SignedMoney"
+        completed_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaleItem"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+
+    SaleSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Sale"
+
+    SaleCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sale"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    ReceiptSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [company, sale]
+          properties:
+            company:
+              $ref: "#/components/schemas/Company"
+            sale:
+              $ref: "#/components/schemas/Sale"
+
+    SaleReturnCreateRequest:
+      type: object
+      required: [sale_id, reason, items]
+      properties:
+        sale_id: { type: integer, format: int64 }
+        reason: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [sale_item_id, return_quantity]
+            properties:
+              sale_item_id: { type: integer, format: int64 }
+              return_quantity:
+                $ref: "#/components/schemas/Quantity"
+              restock:
+                type: boolean
+                default: true
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentWrite"
+
+    SaleReturn:
+      type: object
+      required: [id, return_no, sale_id, status, total_value, returned_at]
+      properties:
+        id: { type: integer, format: int64 }
+        return_no: { type: string }
+        sale_id: { type: integer, format: int64 }
+        status:
+          type: string
+          enum: [completed, cancelled]
+        total_value:
+          $ref: "#/components/schemas/Money"
+        returned_at: { type: string, format: date-time }
+
+    SaleReturnSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/SaleReturn"
+
+    Expense:
+      type: object
+      required: [id, expense_date, amount, description]
+      properties:
+        id: { type: integer, format: int64 }
+        category:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer, format: int64 }
+            name: { type: string }
+        expense_date: { type: string, format: date }
+        amount:
+          $ref: "#/components/schemas/Money"
+        description: { type: string }
+        reference_no: { type: string, nullable: true }
+
+    ExpenseCreateRequest:
+      type: object
+      required: [expense_date, amount, description]
+      properties:
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+        expense_date: { type: string, format: date }
+        amount:
+          $ref: "#/components/schemas/Money"
+        description: { type: string }
+        reference_no: { type: string, nullable: true }
+
+    ExpenseSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Expense"
+
+    ExpenseCollectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Expense"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    SalesSummaryReportResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [from, to, gross_sales, returns, net_sales, transaction_count]
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            gross_sales:
+              $ref: "#/components/schemas/Money"
+            returns:
+              $ref: "#/components/schemas/Money"
+            net_sales:
+              $ref: "#/components/schemas/Money"
+            transaction_count: { type: integer }
+            cash_total:
+              $ref: "#/components/schemas/Money"
+            qris_total:
+              $ref: "#/components/schemas/Money"
+
+    ProfitLossReportResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [from, to, revenue, cogs, gross_profit, operating_expenses, net_profit]
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            revenue:
+              $ref: "#/components/schemas/Money"
+            cogs:
+              $ref: "#/components/schemas/Money"
+            gross_profit:
+              $ref: "#/components/schemas/SignedMoney"
+            operating_expenses:
+              $ref: "#/components/schemas/Money"
+            net_profit:
+              $ref: "#/components/schemas/SignedMoney"
+            comparison:
+              type: object
+              nullable: true
+              properties:
+                revenue:
+                  $ref: "#/components/schemas/SignedMoney"
+                gross_profit:
+                  $ref: "#/components/schemas/SignedMoney"
+                net_profit:
+                  $ref: "#/components/schemas/SignedMoney"
+
+    OfflineProduct:
+      type: object
+      required: [id, sku, name, units, barcodes, inventory_quantity_base, updated_at]
+      properties:
+        id: { type: integer, format: int64 }
+        sku: { type: string }
+        name: { type: string }
+        is_active: { type: boolean }
+        units:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductUnit"
+        barcodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductBarcode"
+        inventory_quantity_base:
+          $ref: "#/components/schemas/Quantity"
+        updated_at: { type: string, format: date-time }
+
+    OfflineBootstrapResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [server_time, terminal, user, products]
+          properties:
+            server_time: { type: string, format: date-time }
+            terminal:
+              $ref: "#/components/schemas/Terminal"
+            user:
+              $ref: "#/components/schemas/User"
+            products:
+              type: array
+              items:
+                $ref: "#/components/schemas/OfflineProduct"
+
+    OfflineChangesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [server_time, products]
+          properties:
+            server_time: { type: string, format: date-time }
+            products:
+              type: array
+              items:
+                $ref: "#/components/schemas/OfflineProduct"
+            deleted_product_ids:
+              type: array
+              items: { type: integer, format: int64 }
+
+    OfflineSalesSyncRequest:
+      type: object
+      required: [terminal_uuid, sales]
+      properties:
+        terminal_uuid:
+          type: string
+          format: uuid
+        sales:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/SaleCreateRequest"
+
+    OfflineSalesSyncResult:
+      type: object
+      required: [client_uuid, status]
+      properties:
+        client_uuid:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [synced, already_synced, conflict, rejected]
+        sale_id:
+          type: integer
+          format: int64
+          nullable: true
+        sale_no:
+          type: string
+          nullable: true
+        conflict_code:
+          type: string
+          nullable: true
+          enum:
+            [INSUFFICIENT_STOCK, PRODUCT_INACTIVE, UNKNOWN_PRODUCT, UNKNOWN_UNIT, PRICE_CONFLICT, INVALID_PAYMENT, OTHER]
+        message:
+          type: string
+          nullable: true
+
+    OfflineSalesSyncResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OfflineSalesSyncResult"

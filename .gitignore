@@ -29,3 +29,6 @@ data/raw/
 # Temporary
 tmp/
 temp/
+
+# React Router generated files
+apps/web/.react-router/
