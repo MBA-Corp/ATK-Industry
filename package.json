@@ -1,0 +1,12 @@
+{
+  "name": "atk-industry",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@12.5.1",
+  "scripts": {
+    "dev": "pnpm --filter @atk-industry/web dev",
+    "build": "pnpm --filter @atk-industry/web build",
+    "lint": "pnpm --filter @atk-industry/web lint",
+    "typecheck": "pnpm --filter @atk-industry/web typecheck"
+  }
+}
