@@ -206,79 +206,79 @@ class RbacTest extends TestCase
     }
 
     public function test_user_with_permission_can_access_protected_route(): void
-{
-    Route::middleware([
-        'auth:sanctum',
-        'permission:product.view',
-    ])->get('/test-permission', function () {
-        return response()->json([
-            'message' => 'Allowed.',
+    {
+        Route::middleware([
+            'auth:sanctum',
+            'permission:product.view',
+        ])->get('/test-permission', function () {
+            return response()->json([
+                'message' => 'Allowed.',
+            ]);
+        });
+
+        $user = User::factory()->create();
+
+        $role = Role::create([
+            'name' => 'Owner',
+            'code' => 'owner',
         ]);
-    });
 
-    $user = User::factory()->create();
-
-    $role = Role::create([
-        'name' => 'Owner',
-        'code' => 'owner',
-    ]);
-
-    $permission = Permission::create([
-        'name' => 'View Product',
-        'code' => 'product.view',
-    ]);
-
-    $role->permissions()->attach($permission->id);
-    $user->roles()->attach($role->id);
-
-    $response = $this
-        ->actingAs($user)
-        ->getJson('/test-permission');
-
-    $response
-        ->assertOk()
-        ->assertJson([
-            'message' => 'Allowed.',
+        $permission = Permission::create([
+            'name' => 'View Product',
+            'code' => 'product.view',
         ]);
-}
 
-public function test_user_without_permission_cannot_access_protected_route(): void
-{
-    Route::middleware([
-        'auth:sanctum',
-        'permission:product.view',
-    ])->get('/test-permission-denied', function () {
-        return response()->json([
-            'message' => 'Allowed.',
-        ]);
-    });
+        $role->permissions()->attach($permission->id);
+        $user->roles()->attach($role->id);
 
-    $user = User::factory()->create();
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/test-permission');
 
-    $response = $this
-        ->actingAs($user)
-        ->getJson('/test-permission-denied');
+        $response
+            ->assertOk()
+            ->assertJson([
+                'message' => 'Allowed.',
+            ]);
+    }
 
-    $response
-        ->assertForbidden()
-        ->assertJson([
-            'message' => 'Forbidden.',
-        ]);
-}
+    public function test_user_without_permission_cannot_access_protected_route(): void
+    {
+        Route::middleware([
+            'auth:sanctum',
+            'permission:product.view',
+        ])->get('/test-permission-denied', function () {
+            return response()->json([
+                'message' => 'Allowed.',
+            ]);
+        });
 
-public function test_guest_cannot_access_permission_protected_route(): void
-{
-    Route::middleware([
-        'auth:sanctum',
-        'permission:product.view',
-    ])->get('/test-permission-guest', function () {
-        return response()->json([
-            'message' => 'Allowed.',
-        ]);
-    });
+        $user = User::factory()->create();
 
-    $response = $this->getJson('/test-permission-guest');
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/test-permission-denied');
 
-    $response->assertUnauthorized();
-}
+        $response
+            ->assertForbidden()
+            ->assertJson([
+                'message' => 'Forbidden.',
+            ]);
+    }
+
+    public function test_guest_cannot_access_permission_protected_route(): void
+    {
+        Route::middleware([
+            'auth:sanctum',
+            'permission:product.view',
+        ])->get('/test-permission-guest', function () {
+            return response()->json([
+                'message' => 'Allowed.',
+            ]);
+        });
+
+        $response = $this->getJson('/test-permission-guest');
+
+        $response->assertUnauthorized();
+    }
 }
