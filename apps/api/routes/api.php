@@ -19,7 +19,16 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
 
         Route::get('/products', [ProductController::class, 'index']);
-        Route::get('/products/{productId}', [ProductController::class, 'show']);
+
+        Route::post(
+            '/products',
+            [ProductController::class, 'store']
+        )->middleware('permission:product.create');
+
+        Route::get('/products/{productId}', [
+            ProductController::class,
+            'show',
+        ]);
         Route::get('/terminals', [TerminalController::class, 'index']);
         Route::post('/terminals', [TerminalController::class, 'store']);
     });
