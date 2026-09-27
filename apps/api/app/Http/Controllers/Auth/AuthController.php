@@ -51,33 +51,33 @@ class AuthController extends Controller
     }
 
     public function me(Request $request): JsonResponse
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
 
-    $user->load('roles.permissions');
+        $user->load('roles.permissions');
 
-    $roles = $user->roles
-        ->pluck('code')
-        ->values();
+        $roles = $user->roles
+            ->pluck('code')
+            ->values();
 
-    $permissions = $user->roles
-        ->flatMap(fn ($role) => $role->permissions)
-        ->pluck('code')
-        ->unique()
-        ->values();
+        $permissions = $user->roles
+            ->flatMap(fn ($role) => $role->permissions)
+            ->pluck('code')
+            ->unique()
+            ->values();
 
-    return response()->json([
-        'data' => [
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'username' => $user->username,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'roles' => $roles,
-                'permissions' => $permissions,
+        return response()->json([
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'is_active' => $user->is_active,
+                    'roles' => $roles,
+                    'permissions' => $permissions,
+                ],
             ],
-        ],
-    ]);
-}
+        ]);
+    }
 }
