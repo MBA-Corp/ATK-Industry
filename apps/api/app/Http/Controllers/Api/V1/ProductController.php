@@ -161,7 +161,8 @@ class ProductController extends Controller
         try {
             $product = $action->execute(
                 $productId,
-                $request->validated()
+                $request->validated(),
+                $request->user()?->id
             );
         } catch (QueryException $exception) {
             if (($exception->errorInfo[0] ?? null) === '23000') {

@@ -10,11 +10,13 @@ class UpdateProductAction
 {
     public function execute(
         int $productId,
-        array $validated
+        array $validated,
+        ?int $changedBy = null
     ): Product {
         return DB::transaction(function () use (
             $productId,
-            $validated
+            $validated,
+            $changedBy
         ) {
             $product = Product::query()
                 ->whereKey($productId)
@@ -29,7 +31,8 @@ class UpdateProductAction
             if (array_key_exists('units', $validated)) {
                 $this->syncUnits(
                     $product,
-                    $validated['units']
+                    $validated['units'],
+                    $changedBy
                 );
             }
 
@@ -75,7 +78,8 @@ class UpdateProductAction
 
     private function syncUnits(
         Product $product,
-        array $units
+        array $units,
+        ?int $changedBy
     ): void {
         $existingUnits = $product
             ->productUnits()
@@ -86,8 +90,6 @@ class UpdateProductAction
         $keptIds = [];
 
         foreach ($units as $index => $unitData) {
-            $productUnit = null;
-
             if (! empty($unitData['id'])) {
                 $productUnit = $existingUnits->get(
                     (int) $unitData['id']
@@ -108,15 +110,28 @@ class UpdateProductAction
                     ]);
                 }
 
+                $oldPrice = (int) $productUnit->selling_price;
+                $newPrice = (int) $unitData['selling_price'];
+
                 $productUnit->update([
                     'conversion_to_base' => $unitData['conversion_to_base'],
 
-                    'selling_price' => $unitData['selling_price'],
+                    'selling_price' => $newPrice,
 
                     'is_base' => $unitData['is_base'],
 
                     'is_active' => $unitData['is_active'] ?? true,
                 ]);
+
+                if ($oldPrice !== $newPrice) {
+                    $productUnit
+                        ->priceHistories()
+                        ->create([
+                            'old_price' => $oldPrice,
+                            'new_price' => $newPrice,
+                            'changed_by' => $changedBy,
+                        ]);
+                }
             } else {
                 $productUnit = $product
                     ->productUnits()
@@ -130,6 +145,14 @@ class UpdateProductAction
                         'is_base' => $unitData['is_base'],
 
                         'is_active' => $unitData['is_active'] ?? true,
+                    ]);
+
+                $productUnit
+                    ->priceHistories()
+                    ->create([
+                        'old_price' => null,
+                        'new_price' => (int) $unitData['selling_price'],
+                        'changed_by' => $changedBy,
                     ]);
             }
 
