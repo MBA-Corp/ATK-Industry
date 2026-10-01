@@ -123,6 +123,8 @@ class PurchaseReceivingTest extends TestCase
 
                 'product_unit_id' => $productUnit->id,
 
+                'conversion_to_base' => $productUnit->conversion_to_base,
+
                 'qty_ordered' => $qtyOrdered,
 
                 'qty_received' => 0,

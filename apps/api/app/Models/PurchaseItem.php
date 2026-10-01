@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'purchase_id',
     'product_supplier_id',
     'product_unit_id',
+    'conversion_to_base',
     'qty_ordered',
     'qty_received',
     'purchase_price',
@@ -24,6 +25,7 @@ class PurchaseItem extends Model
             'qty_received' => 'decimal:6',
             'purchase_price' => 'integer',
             'line_total' => 'integer',
+            'conversion_to_base' => 'decimal:6',
         ];
     }
 

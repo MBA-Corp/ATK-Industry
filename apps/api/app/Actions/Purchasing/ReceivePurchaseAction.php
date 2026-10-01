@@ -2,6 +2,7 @@
 
 namespace App\Actions\Purchasing;
 
+use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -9,6 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class ReceivePurchaseAction
 {
+    public function __construct(
+        private ApplyStockMovementAction $applyStockMovement
+    ) {}
+
     public function execute(
         int $purchaseId,
         array $validated,
@@ -27,8 +32,7 @@ class ReceivePurchaseAction
                     );
 
                 if (
-                    $purchase->status
-                    === 'RECEIVED'
+                    $purchase->status === 'RECEIVED'
                     || $purchase
                         ->receipt()
                         ->exists()
@@ -40,14 +44,16 @@ class ReceivePurchaseAction
 
                 $purchaseItems = $purchase
                     ->items()
+                    ->with(
+                        'productUnit:id,product_id,conversion_to_base'
+                    )
                     ->lockForUpdate()
                     ->get()
                     ->keyBy('id');
 
                 $receivedAt =
-                    $validated[
-                        'received_at'
-                    ] ?? now();
+                    $validated['received_at']
+                    ?? now();
 
                 $receipt = $purchase
                     ->receipt()
@@ -83,7 +89,7 @@ class ReceivePurchaseAction
                             'qty_received'
                         ];
 
-                    $receipt
+                    $receiptItem = $receipt
                         ->items()
                         ->create([
                             'purchase_item_id' => $purchaseItem->id,
@@ -94,6 +100,52 @@ class ReceivePurchaseAction
                     $purchaseItem->update([
                         'qty_received' => $actualQuantity,
                     ]);
+
+                    $productUnit =
+                        $purchaseItem
+                            ->productUnit;
+
+                    $conversionToBase =
+                        $purchaseItem
+                            ->conversion_to_base
+                        ?? $productUnit
+                            ->conversion_to_base;
+
+                    $quantityDeltaBase =
+                        number_format(
+                            (float) $actualQuantity
+                            * (float) $conversionToBase,
+                            6,
+                            '.',
+                            ''
+                        );
+
+                    $this
+                        ->applyStockMovement
+                        ->execute(
+                            productId: $productUnit
+                                ->product_id,
+
+                            movementType: 'PURCHASE_RECEIPT',
+
+                            sourceType: 'PURCHASE_RECEIPT_ITEM',
+
+                            sourceId: $receiptItem->id,
+
+                            quantityDeltaBase: $quantityDeltaBase,
+
+                            productUnitId: $productUnit->id,
+
+                            sourceQuantity: $actualQuantity,
+
+                            conversionToBase: $conversionToBase,
+
+                            actorUserId: $receivedBy,
+
+                            reason: 'Purchase receiving',
+
+                            occurredAt: $receivedAt
+                        );
                 }
 
                 $purchase->update([

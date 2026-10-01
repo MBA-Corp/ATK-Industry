@@ -2,6 +2,7 @@
 
 namespace App\Actions\Purchasing;
 
+use App\Models\ProductUnit;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,6 +18,20 @@ class CreatePurchaseAction
                 $validated,
                 $createdBy
             ) {
+                $productUnits = ProductUnit::query()
+                    ->whereIn(
+                        'id',
+                        collect($validated['items'])
+                            ->pluck('product_unit_id')
+                            ->unique()
+                            ->values()
+                    )
+                    ->get([
+                        'id',
+                        'conversion_to_base',
+                    ])
+                    ->keyBy('id');
+
                 $subtotal = 0;
 
                 foreach (
@@ -71,6 +86,13 @@ class CreatePurchaseAction
                 foreach (
                     $validated['items'] as $item
                 ) {
+                    $productUnit =
+                        $productUnits->get(
+                            (int) $item[
+                                'product_unit_id'
+                            ]
+                        );
+
                     $lineTotal = (int) round(
                         (float) $item[
                             'qty_ordered'
@@ -90,6 +112,9 @@ class CreatePurchaseAction
                             'product_unit_id' => $item[
                                     'product_unit_id'
                                 ],
+
+                            'conversion_to_base' => $productUnit
+                                ->conversion_to_base,
 
                             'qty_ordered' => $item[
                                     'qty_ordered'

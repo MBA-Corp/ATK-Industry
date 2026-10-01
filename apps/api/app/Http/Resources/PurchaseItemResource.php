@@ -47,6 +47,8 @@ class PurchaseItemResource extends JsonResource
                 ],
             ],
 
+            'conversion_to_base' => $this->conversion_to_base,
+
             'qty_ordered' => $this->qty_ordered,
 
             'qty_received' => $this->qty_received,

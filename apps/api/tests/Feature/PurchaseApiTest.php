@@ -175,6 +175,10 @@ class PurchaseApiTest extends TestCase
             ->assertJsonPath(
                 'data.items.0.line_total',
                 10000
+            )
+            ->assertJsonPath(
+                'data.items.0.conversion_to_base',
+                '1.000000'
             );
 
         $purchase = Purchase::query()
@@ -203,7 +207,10 @@ class PurchaseApiTest extends TestCase
 
                 'product_unit_id' => $productUnit->id,
 
+                'conversion_to_base' => 1,
+
                 'purchase_price' => 5000,
+
                 'line_total' => 10000,
             ]
         );
