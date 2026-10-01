@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Purchasing\CreatePurchaseAction;
+use App\Actions\Purchasing\ReceivePurchaseAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReceivePurchaseRequest;
 use App\Http\Requests\StorePurchaseRequest;
 use App\Http\Resources\PurchaseResource;
 use App\Models\Purchase;
@@ -82,13 +84,13 @@ class PurchaseController extends Controller
             )->resolve(),
 
             'meta' => [
-            'current_page' => $purchases->currentPage(),
+                'current_page' => $purchases->currentPage(),
 
-            'per_page' => $purchases->perPage(),
+                'per_page' => $purchases->perPage(),
 
-            'total' => $purchases->total(),
+                'total' => $purchases->total(),
 
-            'last_page' => $purchases->lastPage(),
+                'last_page' => $purchases->lastPage(),
             ],
         ]);
     }
@@ -135,6 +137,22 @@ class PurchaseController extends Controller
                 'items.productUnit.unit:id,code,name',
             ])
             ->findOrFail($purchaseId);
+
+        return new PurchaseResource(
+            $purchase
+        );
+    }
+
+    public function receive(
+        ReceivePurchaseRequest $request,
+        int $purchaseId,
+        ReceivePurchaseAction $action
+    ): PurchaseResource {
+        $purchase = $action->execute(
+            $purchaseId,
+            $request->validated(),
+            $request->user()?->id
+        );
 
         return new PurchaseResource(
             $purchase

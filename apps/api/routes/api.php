@@ -30,6 +30,10 @@ Route::prefix('v1')->group(function () {
             '/purchases',
             [PurchaseController::class, 'store']
         )->middleware('permission:purchase.create');
+        Route::post(
+            '/purchases/{purchaseId}/receive',
+            [PurchaseController::class, 'receive']
+        )->middleware('permission:purchase.receive');
 
         Route::get(
             '/purchases/{purchaseId}',

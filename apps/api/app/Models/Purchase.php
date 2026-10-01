@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'purchase_number',
@@ -59,6 +60,13 @@ class Purchase extends Model
         return $this->belongsTo(
             User::class,
             'created_by'
+        );
+    }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(
+            PurchaseReceipt::class
         );
     }
 }
