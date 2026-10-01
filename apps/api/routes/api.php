@@ -25,6 +25,11 @@ Route::prefix('v1')->group(function () {
             [ProductController::class, 'store']
         )->middleware('permission:product.create');
 
+        Route::patch(
+            '/products/{productId}',
+            [ProductController::class, 'update']
+        )->middleware('permission:product.update');
+
         Route::get('/products/{productId}', [
             ProductController::class,
             'show',

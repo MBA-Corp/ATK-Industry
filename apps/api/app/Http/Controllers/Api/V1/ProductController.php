@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Catalog\UpdateProductAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Database\QueryException;
@@ -149,6 +151,29 @@ class ProductController extends Controller
         return (new ProductResource($product))
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function update(
+        UpdateProductRequest $request,
+        int $productId,
+        UpdateProductAction $action
+    ): ProductResource|JsonResponse {
+        try {
+            $product = $action->execute(
+                $productId,
+                $request->validated()
+            );
+        } catch (QueryException $exception) {
+            if (($exception->errorInfo[0] ?? null) === '23000') {
+                return response()->json([
+                    'message' => 'Product conflicts with existing catalog data.',
+                ], 409);
+            }
+
+            throw $exception;
+        }
+
+        return new ProductResource($product);
     }
 
     public function show(int $productId): ProductResource
