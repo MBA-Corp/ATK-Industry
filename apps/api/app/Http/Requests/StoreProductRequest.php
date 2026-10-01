@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreProductRequest extends FormRequest
@@ -21,7 +22,13 @@ class StoreProductRequest extends FormRequest
             'category_id' => [
                 'nullable',
                 'integer',
-                'exists:categories,id',
+                Rule::exists('categories', 'id')
+                    ->where(
+                        fn ($query) => $query->where(
+                            'is_active',
+                            true
+                        )
+                    ),
             ],
 
             'size' => ['nullable', 'string', 'max:255'],
@@ -35,7 +42,13 @@ class StoreProductRequest extends FormRequest
                 'required',
                 'integer',
                 'distinct',
-                'exists:units,id',
+                Rule::exists('units', 'id')
+                    ->where(
+                        fn ($query) => $query->where(
+                            'is_active',
+                            true
+                        )
+                    ),
             ],
 
             'units.*.conversion_to_base' => [
@@ -92,7 +105,10 @@ class StoreProductRequest extends FormRequest
 
                 $baseUnits = collect($units)
                     ->filter(
-                        fn (array $unit) => ($unit['is_base'] ?? false) === true
+                        fn (array $unit) => filter_var(
+                            $unit['is_base'] ?? false,
+                            FILTER_VALIDATE_BOOLEAN
+                        )
                     );
 
                 if ($baseUnits->count() !== 1) {
@@ -114,11 +130,28 @@ class StoreProductRequest extends FormRequest
                     );
                 }
 
+                if (
+                    $baseUnit !== null
+                    && array_key_exists('is_active', $baseUnit)
+                    && ! filter_var(
+                        $baseUnit['is_active'],
+                        FILTER_VALIDATE_BOOLEAN
+                    )
+                ) {
+                    $validator->errors()->add(
+                        'units',
+                        'Base product unit must be active.'
+                    );
+                }
+
                 $barcodes = $this->input('barcodes', []);
 
                 $primaryBarcodes = collect($barcodes)
                     ->filter(
-                        fn (array $barcode) => ($barcode['is_primary'] ?? false) === true
+                        fn (array $barcode) => filter_var(
+                            $barcode['is_primary'] ?? false,
+                            FILTER_VALIDATE_BOOLEAN
+                        )
                     );
 
                 if ($primaryBarcodes->count() > 1) {

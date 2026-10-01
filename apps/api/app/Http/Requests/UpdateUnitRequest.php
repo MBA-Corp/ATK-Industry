@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Unit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateUnitRequest extends FormRequest
 {
@@ -51,5 +53,45 @@ class UpdateUnitRequest extends FormRequest
                 ),
             ]);
         }
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                if (
+                    ! $this->has('is_active')
+                    || $this->boolean('is_active')
+                ) {
+                    return;
+                }
+
+                $unit = Unit::query()
+                    ->find($this->route('unitId'));
+
+                if ($unit === null) {
+                    return;
+                }
+
+                $usedByActiveProduct = $unit
+                    ->productUnits()
+                    ->where('is_active', true)
+                    ->whereHas(
+                        'product',
+                        fn ($query) => $query->where(
+                            'is_active',
+                            true
+                        )
+                    )
+                    ->exists();
+
+                if ($usedByActiveProduct) {
+                    $validator->errors()->add(
+                        'is_active',
+                        'Unit cannot be deactivated while it is used by an active product unit.'
+                    );
+                }
+            },
+        ];
     }
 }
