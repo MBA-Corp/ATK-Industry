@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\TerminalController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Auth\AuthController;
@@ -18,6 +19,25 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get(
+            '/suppliers',
+            [SupplierController::class, 'index']
+        );
+
+        Route::post(
+            '/suppliers',
+            [SupplierController::class, 'store']
+        )->middleware('permission:supplier.create');
+
+        Route::get(
+            '/suppliers/{supplierId}',
+            [SupplierController::class, 'show']
+        );
+
+        Route::patch(
+            '/suppliers/{supplierId}',
+            [SupplierController::class, 'update']
+        )->middleware('permission:supplier.update');
         Route::get('/me', [AuthController::class, 'me']);
         Route::get(
             '/categories',
