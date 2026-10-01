@@ -43,4 +43,11 @@ class Product extends Model
     {
         return $this->hasMany(ProductBarcode::class);
     }
+
+    public function productSuppliers(): HasMany
+    {
+        return $this->hasMany(
+            ProductSupplier::class
+        );
+    }
 }

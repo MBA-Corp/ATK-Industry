@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'code',
@@ -24,5 +25,12 @@ class Supplier extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function productSuppliers(): HasMany
+    {
+        return $this->hasMany(
+            ProductSupplier::class
+        );
     }
 }
