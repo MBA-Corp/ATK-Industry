@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\TerminalController;
+use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +19,35 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
+        Route::get(
+            '/categories',
+            [CategoryController::class, 'index']
+        );
+
+        Route::post(
+            '/categories',
+            [CategoryController::class, 'store']
+        )->middleware('permission:category.create');
+
+        Route::patch(
+            '/categories/{categoryId}',
+            [CategoryController::class, 'update']
+        )->middleware('permission:category.update');
+
+        Route::get(
+            '/units',
+            [UnitController::class, 'index']
+        );
+
+        Route::post(
+            '/units',
+            [UnitController::class, 'store']
+        )->middleware('permission:unit.create');
+
+        Route::patch(
+            '/units/{unitId}',
+            [UnitController::class, 'update']
+        )->middleware('permission:unit.update');
 
         Route::get('/products', [ProductController::class, 'index']);
 
@@ -24,6 +55,11 @@ Route::prefix('v1')->group(function () {
             '/products',
             [ProductController::class, 'store']
         )->middleware('permission:product.create');
+
+        Route::patch(
+            '/products/{productId}',
+            [ProductController::class, 'update']
+        )->middleware('permission:product.update');
 
         Route::get('/products/{productId}', [
             ProductController::class,

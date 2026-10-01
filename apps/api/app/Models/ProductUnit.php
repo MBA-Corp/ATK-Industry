@@ -48,4 +48,11 @@ class ProductUnit extends Model
     {
         return $this->hasMany(ProductBarcode::class);
     }
+
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(
+            ProductPriceHistory::class
+        );
+    }
 }
