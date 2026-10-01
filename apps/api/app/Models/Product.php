@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'sku',
@@ -48,6 +49,20 @@ class Product extends Model
     {
         return $this->hasMany(
             ProductSupplier::class
+        );
+    }
+
+    public function inventoryBalance(): HasOne
+    {
+        return $this->hasOne(
+            InventoryBalance::class
+        );
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(
+            StockMovement::class
         );
     }
 }
