@@ -59,6 +59,42 @@ class SaleResource extends JsonResource
             'created_at' => $this->created_at,
 
             'updated_at' => $this->updated_at,
+            'cancellation' => $this->when(
+                $this->relationLoaded('cancellation'),
+                fn () => $this->cancellation === null
+                    ? null
+                    : [
+                        'id' => $this->cancellation->id,
+
+                        'reason' => $this->cancellation
+                            ->reason,
+
+                        'cancelled_at' => $this
+                            ->cancellation
+                            ->cancelled_at,
+
+                        'cancelled_by' => $this
+                            ->cancellation
+                            ->cancelledBy === null
+                                ? null
+                                : [
+                                    'id' => $this
+                                        ->cancellation
+                                        ->cancelledBy
+                                        ->id,
+
+                                    'name' => $this
+                                        ->cancellation
+                                        ->cancelledBy
+                                        ->name,
+
+                                    'username' => $this
+                                        ->cancellation
+                                        ->cancelledBy
+                                        ->username,
+                                ],
+                    ]
+            ),
         ];
     }
 }

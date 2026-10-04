@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Sales\CancelSaleAction;
 use App\Actions\Sales\CreateSaleAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CancelSaleRequest;
 use App\Http\Requests\StoreSaleRequest;
 use App\Http\Resources\SaleResource;
 use App\Models\Sale;
@@ -148,8 +150,25 @@ class SaleController extends Controller
                 'cashier:id,name,username',
                 'items',
                 'payments',
+                'cancellation.cancelledBy:id,name,username',
             ])
             ->findOrFail($saleId);
+
+        return new SaleResource(
+            $sale
+        );
+    }
+
+    public function cancel(
+        CancelSaleRequest $request,
+        int $saleId,
+        CancelSaleAction $action
+    ): SaleResource {
+        $sale = $action->execute(
+            $saleId,
+            $request->validated(),
+            $request->user()->id
+        );
 
         return new SaleResource(
             $sale

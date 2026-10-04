@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'sale_number',
@@ -62,6 +63,13 @@ class Sale extends Model
     {
         return $this->hasMany(
             SalePayment::class
+        );
+    }
+
+    public function cancellation(): HasOne
+    {
+        return $this->hasOne(
+            SaleCancellation::class
         );
     }
 }

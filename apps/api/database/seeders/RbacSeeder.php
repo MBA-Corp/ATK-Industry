@@ -88,6 +88,10 @@ class RbacSeeder extends Seeder
                 'name' => 'Create Sale',
                 'code' => 'sale.create',
             ],
+            [
+                'name' => 'Cancel Sale',
+                'code' => 'sale.cancel',
+            ],
         ];
 
         foreach ($permissions as $permission) {

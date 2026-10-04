@@ -18,15 +18,27 @@ class SalesDatabaseFoundationTest extends TestCase
     public function test_sales_tables_exist(): void
     {
         $this->assertTrue(
-            Schema::hasTable('sales')
+            Schema::hasTable(
+                'sales'
+            )
         );
 
         $this->assertTrue(
-            Schema::hasTable('sale_items')
+            Schema::hasTable(
+                'sale_items'
+            )
         );
 
         $this->assertTrue(
-            Schema::hasTable('sale_payments')
+            Schema::hasTable(
+                'sale_payments'
+            )
+        );
+
+        $this->assertTrue(
+            Schema::hasTable(
+                'sale_cancellations'
+            )
         );
     }
 
@@ -83,6 +95,20 @@ class SalesDatabaseFoundationTest extends TestCase
                     'amount',
                     'reference',
                     'paid_at',
+                    'created_at',
+                    'updated_at',
+                ]
+            )
+        );
+        $this->assertTrue(
+            Schema::hasColumns(
+                'sale_cancellations',
+                [
+                    'id',
+                    'sale_id',
+                    'cancelled_by',
+                    'reason',
+                    'cancelled_at',
                     'created_at',
                     'updated_at',
                 ]
