@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductSupplierController;
 use App\Http\Controllers\Api\V1\PurchaseController;
@@ -21,6 +22,20 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get(
+            '/inventory',
+            [InventoryController::class, 'index']
+        );
+
+        Route::get(
+            '/inventory/{productId}',
+            [InventoryController::class, 'show']
+        );
+
+        Route::get(
+            '/inventory/{productId}/movements',
+            [InventoryController::class, 'movements']
+        );
         Route::get(
             '/purchases',
             [PurchaseController::class, 'index']
