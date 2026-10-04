@@ -7,6 +7,7 @@ use App\Actions\Sales\CreateSaleAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CancelSaleRequest;
 use App\Http\Requests\StoreSaleRequest;
+use App\Http\Resources\SaleReceiptResource;
 use App\Http\Resources\SaleResource;
 use App\Models\Sale;
 use Illuminate\Database\QueryException;
@@ -171,6 +172,25 @@ class SaleController extends Controller
         );
 
         return new SaleResource(
+            $sale
+        );
+    }
+
+    public function receipt(
+        int $saleId
+    ): SaleReceiptResource {
+        $sale = Sale::query()
+            ->with([
+                'terminal:id,terminal_uuid,name',
+                'cashier:id,name,username',
+                'items',
+                'payments',
+
+                'cancellation.cancelledBy:id,name,username',
+            ])
+            ->findOrFail($saleId);
+
+        return new SaleReceiptResource(
             $sale
         );
     }

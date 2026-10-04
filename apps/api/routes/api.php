@@ -24,6 +24,10 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get(
+            '/sales/{saleId}/receipt',
+            [SaleController::class, 'receipt']
+        );
         Route::post(
             '/sales/{saleId}/cancel',
             [SaleController::class, 'cancel']
