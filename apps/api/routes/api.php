@@ -34,10 +34,6 @@ Route::prefix('v1')->group(function () {
         )->middleware(
             'permission:sale.cancel'
         );
-        Route::post(
-            '/sales',
-            [SaleController::class, 'store']
-        )->middleware('permission:sale.create');
         Route::get(
             '/sales',
             [SaleController::class, 'index']
