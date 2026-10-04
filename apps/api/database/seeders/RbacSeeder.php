@@ -84,6 +84,10 @@ class RbacSeeder extends Seeder
                 'name' => 'Adjust Inventory',
                 'code' => 'inventory.adjust',
             ],
+            [
+                'name' => 'Create Sale',
+                'code' => 'sale.create',
+            ],
         ];
 
         foreach ($permissions as $permission) {
