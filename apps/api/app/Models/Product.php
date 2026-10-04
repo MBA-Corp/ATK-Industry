@@ -65,4 +65,11 @@ class Product extends Model
             StockMovement::class
         );
     }
+
+    public function stockAdjustments(): HasMany
+    {
+        return $this->hasMany(
+            StockAdjustment::class
+        );
+    }
 }

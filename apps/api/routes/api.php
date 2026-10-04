@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductSupplierController;
 use App\Http\Controllers\Api\V1\PurchaseController;
+use App\Http\Controllers\Api\V1\StockAdjustmentController;
 use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\TerminalController;
 use App\Http\Controllers\Api\V1\UnitController;
@@ -22,6 +23,12 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::post(
+            '/inventory/{productId}/adjustments',
+            [StockAdjustmentController::class, 'store']
+        )->middleware(
+            'permission:inventory.adjust'
+        );
         Route::get(
             '/inventory',
             [InventoryController::class, 'index']
