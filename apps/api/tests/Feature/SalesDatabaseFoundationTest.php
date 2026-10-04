@@ -24,6 +24,10 @@ class SalesDatabaseFoundationTest extends TestCase
         $this->assertTrue(
             Schema::hasTable('sale_items')
         );
+
+        $this->assertTrue(
+            Schema::hasTable('sale_payments')
+        );
     }
 
     public function test_sales_tables_have_expected_columns(): void
@@ -64,6 +68,21 @@ class SalesDatabaseFoundationTest extends TestCase
                     'catalog_unit_price',
                     'sale_unit_price',
                     'line_total',
+                    'created_at',
+                    'updated_at',
+                ]
+            )
+        );
+        $this->assertTrue(
+            Schema::hasColumns(
+                'sale_payments',
+                [
+                    'id',
+                    'sale_id',
+                    'payment_method',
+                    'amount',
+                    'reference',
+                    'paid_at',
                     'created_at',
                     'updated_at',
                 ]

@@ -108,10 +108,18 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 2,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 10000,
                     ],
                 ],
             ]);
@@ -194,10 +202,18 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 2,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 48000,
                     ],
                 ],
             ])
@@ -249,11 +265,19 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 1,
                         'sale_unit_price' => 14000,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 14000,
                     ],
                 ],
             ])
@@ -307,10 +331,18 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 2,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 10000,
                     ],
                 ],
             ])
@@ -375,6 +407,7 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $unitA->id,
@@ -383,6 +416,13 @@ class SaleCheckoutApiTest extends TestCase
                     [
                         'product_unit_id' => $unitB->id,
                         'quantity' => 5,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 35000,
                     ],
                 ],
             ])
@@ -439,10 +479,18 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 1,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 5000,
                     ],
                 ],
             ])
@@ -478,10 +526,18 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 1,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 5000,
                     ],
                 ],
             ])
@@ -512,10 +568,18 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 1,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 5000,
                     ],
                 ],
             ])
@@ -559,6 +623,13 @@ class SaleCheckoutApiTest extends TestCase
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 1,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 5000,
                     ],
                 ],
             ])
@@ -665,6 +736,7 @@ class SaleCheckoutApiTest extends TestCase
             ->actingAs($user)
             ->postJson('/api/v1/sales', [
                 'terminal_id' => $terminal->id,
+
                 'items' => [
                     [
                         'product_unit_id' => $productUnit->id,
@@ -673,6 +745,13 @@ class SaleCheckoutApiTest extends TestCase
                     [
                         'product_unit_id' => $productUnit->id,
                         'quantity' => 6,
+                    ],
+                ],
+
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 60000,
                     ],
                 ],
             ])

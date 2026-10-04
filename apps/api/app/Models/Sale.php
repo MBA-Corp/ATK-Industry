@@ -57,4 +57,11 @@ class Sale extends Model
             SaleItem::class
         );
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(
+            SalePayment::class
+        );
+    }
 }

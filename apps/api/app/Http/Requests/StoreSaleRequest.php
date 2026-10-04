@@ -68,6 +68,35 @@ class StoreSaleRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+
+            'payments' => [
+                'required',
+                'array',
+                'min:1',
+                'max:2',
+            ],
+
+            'payments.*.payment_method' => [
+                'required',
+                'string',
+                'distinct',
+                Rule::in([
+                    'CASH',
+                    'QRIS',
+                ]),
+            ],
+
+            'payments.*.amount' => [
+                'required',
+                'integer',
+                'gt:0',
+            ],
+
+            'payments.*.reference' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ];
     }
 

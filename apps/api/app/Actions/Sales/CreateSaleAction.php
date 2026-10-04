@@ -134,7 +134,17 @@ class CreateSaleAction
 
                 $soldAt = $validated['sold_at']
                     ?? now();
+                $paymentTotal = collect(
+                    $validated['payments']
+                )->sum(
+                    fn (array $payment) => (int) $payment['amount']
+                );
 
+                if ($paymentTotal !== $subtotal) {
+                    throw ValidationException::withMessages([
+                        'payments' => 'Total payment must exactly match the sale grand total.',
+                    ]);
+                }
                 $sale = Sale::create([
                     'sale_number' => $this
                         ->generateSaleNumber(),
@@ -159,6 +169,25 @@ class CreateSaleAction
 
                     'completed_at' => $soldAt,
                 ]);
+                foreach (
+                    $validated['payments'] as $payment
+                ) {
+                    $sale->payments()->create([
+                        'payment_method' => $payment[
+                            'payment_method'
+                        ],
+
+                        'amount' => $payment[
+                            'amount'
+                        ],
+
+                        'reference' => $payment[
+                                'reference'
+                            ] ?? null,
+
+                        'paid_at' => $soldAt,
+                    ]);
+                }
 
                 /*
                  * Urut berdasarkan product ID untuk membantu
@@ -269,6 +298,7 @@ class CreateSaleAction
                     'terminal:id,terminal_uuid,name',
                     'cashier:id,name,username',
                     'items',
+                    'payments',
                 ]);
             },
             3
