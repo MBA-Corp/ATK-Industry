@@ -28,6 +28,22 @@ Route::prefix('v1')->group(function () {
             '/sales',
             [SaleController::class, 'store']
         )->middleware('permission:sale.create');
+        Route::get(
+            '/sales',
+            [SaleController::class, 'index']
+        );
+
+        Route::post(
+            '/sales',
+            [SaleController::class, 'store']
+        )->middleware(
+            'permission:sale.create'
+        );
+
+        Route::get(
+            '/sales/{saleId}',
+            [SaleController::class, 'show']
+        );
         Route::post(
             '/inventory/{productId}/adjustments',
             [StockAdjustmentController::class, 'store']
