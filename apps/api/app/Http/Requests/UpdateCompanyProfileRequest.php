@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCompanyProfileRequest extends FormRequest
 {
@@ -37,6 +38,9 @@ class UpdateCompanyProfileRequest extends FormRequest
                 'image',
                 'mimes:jpg,jpeg,png,webp',
                 'max:2048',
+                Rule::prohibitedIf(
+                    $this->boolean('remove_logo')
+                ),
             ],
 
             'remove_logo' => [

@@ -370,4 +370,127 @@ class CompanyProfileApiTest extends TestCase
                 $profile->logo_path
             );
     }
+
+    public function test_upload_and_remove_logo_cannot_be_requested_together(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->userWithUpdatePermission();
+
+        Storage::disk('public')->put(
+            'company-profile/original.png',
+            'original-logo'
+        );
+
+        CompanyProfile::create([
+            'profile_key' => 'PRIMARY',
+            'name' => 'Original Store',
+            'address' => 'Original Address',
+            'phone' => '08123456789',
+            'logo_path' => 'company-profile/original.png',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->post(
+                '/api/v1/company-profile',
+                [
+                    '_method' => 'PUT',
+                    'name' => 'Changed Store',
+                    'address' => 'New Address',
+                    'phone' => '08111111111',
+                    'remove_logo' => true,
+                    'logo' => UploadedFile::fake()
+                        ->image('new-logo.png', 100, 100),
+                ],
+                ['Accept' => 'application/json']
+            )
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('logo');
+
+        $this->assertDatabaseHas('company_profiles', [
+            'profile_key' => 'PRIMARY',
+            'name' => 'Original Store',
+            'logo_path' => 'company-profile/original.png',
+        ]);
+
+        Storage::disk('public')->assertExists(
+            'company-profile/original.png'
+        );
+
+        $this->assertCount(
+            1,
+            Storage::disk('public')->allFiles('company-profile')
+        );
+    }
+
+    public function test_updating_profile_without_logo_keeps_existing_logo(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->userWithUpdatePermission();
+
+        Storage::disk('public')->put(
+            'company-profile/existing.png',
+            'existing-logo'
+        );
+
+        CompanyProfile::create([
+            'profile_key' => 'PRIMARY',
+            'name' => 'Old Store',
+            'address' => 'Old Address',
+            'phone' => '0800000000',
+            'logo_path' => 'company-profile/existing.png',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->putJson('/api/v1/company-profile', [
+                'name' => 'Updated Store',
+                'address' => 'Updated Address',
+                'phone' => '08123456789',
+            ])
+            ->assertOk()
+            ->assertJsonPath(
+                'data.logo_path',
+                'company-profile/existing.png'
+            );
+
+        Storage::disk('public')->assertExists(
+            'company-profile/existing.png'
+        );
+
+        $this->assertDatabaseCount('company_profiles', 1);
+    }
+
+    public function test_oversized_logo_is_rejected_without_creating_profile(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->userWithUpdatePermission();
+
+        $this
+            ->actingAs($user)
+            ->put(
+                '/api/v1/company-profile',
+                [
+                    'name' => 'Insan ATK',
+                    'address' => 'Bogor',
+                    'phone' => '08123456789',
+                    'logo' => UploadedFile::fake()
+                        ->image('oversized.png')
+                        ->size(2049),
+                ],
+                ['Accept' => 'application/json']
+            )
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('logo');
+
+        $this->assertDatabaseCount('company_profiles', 0);
+
+        $this->assertSame(
+            [],
+            Storage::disk('public')->allFiles('company-profile')
+        );
+    }
 }

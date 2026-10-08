@@ -4,79 +4,119 @@ namespace App\Actions\Company;
 
 use App\Models\CompanyProfile;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Throwable;
 
 class UpdateCompanyProfileAction
 {
-    public function execute(
-        array $validated
-    ): CompanyProfile {
-        $profile = CompanyProfile::query()
-            ->firstOrNew([
-                'profile_key' => 'PRIMARY',
-            ]);
+    public function execute(array $validated): CompanyProfile
+    {
+        $logo = $validated['logo'] ?? null;
+        $removeLogo = (bool) ($validated['remove_logo'] ?? false);
 
-        $oldLogoPath = $profile->logo_path;
+        unset($validated['logo'], $validated['remove_logo']);
 
         $newLogoPath = null;
 
-        $logo = $validated['logo']
-            ?? null;
-
-        $removeLogo = (bool) (
-            $validated['remove_logo']
-            ?? false
-        );
-
-        unset(
-            $validated['logo'],
-            $validated['remove_logo']
-        );
-
+        // Store the new file before changing database state.
         if ($logo instanceof UploadedFile) {
             $newLogoPath = $logo->store(
                 'company-profile',
                 'public'
             );
 
-            $validated['logo_path'] =
-                $newLogoPath;
+            if (! is_string($newLogoPath) || $newLogoPath === '') {
+                throw new RuntimeException(
+                    'Failed to store company profile logo.'
+                );
+            }
+
+            $validated['logo_path'] = $newLogoPath;
         } elseif ($removeLogo) {
             $validated['logo_path'] = null;
         }
 
         try {
-            $profile->fill(
-                $validated
+            [$profile, $oldLogoPath] = DB::transaction(
+                function () use ($validated): array {
+                    $now = now();
+
+                    // Atomic singleton creation using the unique key.
+                    $inserted = DB::table('company_profiles')
+                        ->insertOrIgnore([
+                            'profile_key' => 'PRIMARY',
+                            'name' => $validated['name'],
+                            'address' => $validated['address'],
+                            'phone' => $validated['phone'],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+
+                    // Serialize updates to the existing profile.
+                    $profile = CompanyProfile::query()
+                        ->where('profile_key', 'PRIMARY')
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $oldLogoPath = $profile->logo_path;
+
+                    $profile->fill($validated);
+
+                    if (! $profile->save()) {
+                        throw new RuntimeException(
+                            'Failed to save company profile.'
+                        );
+                    }
+
+                    // Preserve 201 on creation and 200 on updates.
+                    $profile->wasRecentlyCreated = $inserted === 1;
+
+                    return [$profile, $oldLogoPath];
+                },
+                3
             );
-
-            $profile->profile_key =
-                'PRIMARY';
-
-            $profile->save();
         } catch (Throwable $exception) {
+            // Database failed: remove the newly uploaded file.
             if ($newLogoPath !== null) {
-                Storage::disk('public')
-                    ->delete(
-                        $newLogoPath
-                    );
+                $this->deleteLogoSafely($newLogoPath);
             }
 
             throw $exception;
         }
 
+        // Database has committed successfully at this point.
         if (
             $oldLogoPath !== null
-            && $oldLogoPath
-                !== $profile->logo_path
+            && $oldLogoPath !== $profile->logo_path
         ) {
-            Storage::disk('public')
-                ->delete(
-                    $oldLogoPath
-                );
+            $this->deleteLogoSafely($oldLogoPath);
         }
 
-        return $profile->refresh();
+        return $profile;
+    }
+
+    private function deleteLogoSafely(string $path): void
+    {
+        try {
+            $deleted = Storage::disk('public')->delete($path);
+
+            if (! $deleted) {
+                Log::warning(
+                    'Company profile logo cleanup failed.',
+                    ['path' => $path]
+                );
+            }
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Company profile logo cleanup encountered an error.',
+                [
+                    'path' => $path,
+                    'error' => $exception->getMessage(),
+                ]
+            );
+        }
     }
 }
