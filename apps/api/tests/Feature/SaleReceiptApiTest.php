@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CompanyProfile;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\Sale;
@@ -246,5 +247,58 @@ class SaleReceiptApiTest extends TestCase
                 "/api/v1/sales/{$sale->id}/receipt"
             )
             ->assertUnauthorized();
+    }
+
+    public function test_receipt_contains_company_profile(): void
+    {
+        [
+            $user,
+            $sale,
+        ] = $this->createSale();
+
+        CompanyProfile::create([
+            'profile_key' => 'PRIMARY',
+            'name' => 'Insan ATK',
+            'address' => 'Jl. Receipt Test',
+            'phone' => '08123456789',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->getJson(
+                "/api/v1/sales/{$sale->id}/receipt"
+            )
+            ->assertOk()
+            ->assertJsonPath(
+                'data.company.name',
+                'Insan ATK'
+            )
+            ->assertJsonPath(
+                'data.company.address',
+                'Jl. Receipt Test'
+            )
+            ->assertJsonPath(
+                'data.company.phone',
+                '08123456789'
+            );
+    }
+
+    public function test_receipt_still_works_without_company_profile(): void
+    {
+        [
+            $user,
+            $sale,
+        ] = $this->createSale();
+
+        $this
+            ->actingAs($user)
+            ->getJson(
+                "/api/v1/sales/{$sale->id}/receipt"
+            )
+            ->assertOk()
+            ->assertJsonPath(
+                'data.company',
+                null
+            );
     }
 }

@@ -92,6 +92,10 @@ class RbacSeeder extends Seeder
                 'name' => 'Cancel Sale',
                 'code' => 'sale.cancel',
             ],
+            [
+                'name' => 'Update Company Profile',
+                'code' => 'company_profile.update',
+            ],
         ];
 
         foreach ($permissions as $permission) {

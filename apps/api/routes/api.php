@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductSupplierController;
@@ -24,6 +25,17 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get(
+            '/company-profile',
+            [CompanyProfileController::class, 'show']
+        );
+
+        Route::put(
+            '/company-profile',
+            [CompanyProfileController::class, 'update']
+        )->middleware(
+            'permission:company_profile.update'
+        );
         Route::get(
             '/sales/{saleId}/receipt',
             [SaleController::class, 'receipt']
