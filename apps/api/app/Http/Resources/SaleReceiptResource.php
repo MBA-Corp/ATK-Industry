@@ -2,16 +2,43 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CompanyProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class SaleReceiptResource extends JsonResource
 {
     public function toArray(
         Request $request
     ): array {
+        $companyProfile = CompanyProfile::query()
+            ->where(
+                'profile_key',
+                'PRIMARY'
+            )
+            ->first();
+
         return [
             'receipt_number' => $this->sale_number,
+            'company' => $companyProfile === null
+    ? null
+    : [
+        'name' => $companyProfile->name,
+
+        'address' => $companyProfile->address,
+
+        'phone' => $companyProfile->phone,
+
+        'logo_url' => $companyProfile
+            ->logo_path === null
+                ? null
+                : Storage::disk('public')
+                    ->url(
+                        $companyProfile
+                            ->logo_path
+                    ),
+    ],
 
             'sale_id' => $this->id,
 
