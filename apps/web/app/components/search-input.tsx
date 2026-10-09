@@ -10,7 +10,7 @@ export function SearchInput({
   ...props
 }: SearchInputProps) {
   return (
-    <div className="relative">
+    <div className="relative search-input-shell workspace-search">
       <Search
         aria-hidden="true"
         className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"

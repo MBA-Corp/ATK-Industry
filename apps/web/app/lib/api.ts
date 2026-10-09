@@ -1,4 +1,5 @@
-const apiBaseUrl = import.meta.env.VITE_API_URL;
+// Development requests share the browser origin through the Vite proxy.
+const apiBaseUrl = import.meta.env.DEV ? "/" : import.meta.env.VITE_API_URL;
 
 if (!apiBaseUrl) {
   throw new Error("VITE_API_URL is not configured.");
@@ -11,7 +12,15 @@ function createApiUrl(path: string) {
 
   const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
 
-  return new URL(normalizedPath, baseUrl).toString();
+  return new URL(
+    normalizedPath,
+    new URL(
+      baseUrl,
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost",
+    ),
+  ).toString();
 }
 
 function getCookie(name: string): string | null {

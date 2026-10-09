@@ -135,3 +135,144 @@
     @apply font-sans;
   }
 }
+
+.select-menu {
+  position: relative;
+  min-width: 0;
+}
+
+.select-menu-trigger {
+  width: 100%;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.select-menu-trigger[aria-expanded="true"] {
+  color: #516fc7;
+}
+
+.select-menu-trigger:focus-visible {
+  outline-offset: 1px;
+}
+
+.select-menu-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-menu-chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: transform 0.18s ease;
+}
+
+.select-menu-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.select-menu-popover {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: max(100%, 190px);
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #e5e9f3;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 14px 32px #2e3d681c, 0 3px 8px #2e3d680b;
+  animation: select-menu-enter 0.14s ease-out;
+}
+
+.select-menu-option {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #687388;
+  font: inherit;
+  font-size: 10px;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.select-menu-option:hover,
+.select-menu-option:focus-visible {
+  background: #f1f4ff;
+  color: #426bd9;
+  outline: none;
+}
+
+.select-menu-option.selected {
+  background: #eef2ff;
+  color: #426bd9;
+  font-weight: 550;
+}
+
+.select-menu-option svg {
+  flex-shrink: 0;
+}
+
+@keyframes select-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Shared search interaction: the entire field owns hover and focus. */
+.workspace-search.workspace-search {
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.workspace-search.workspace-search:hover {
+  background-color: #f1f5ff;
+  border-color: #dbe5fa;
+  box-shadow: 0 3px 10px #365ca810;
+}
+.workspace-search.workspace-search:focus-within {
+  background-color: #fff;
+  border-color: #95aff0;
+  box-shadow: 0 0 0 3px #4775ed16, 0 4px 14px #365ca812;
+}
+.workspace-search.workspace-search > svg {
+  flex-shrink: 0;
+  transition: color 180ms ease, transform 180ms ease;
+}
+.workspace-search.workspace-search:is(:hover, :focus-within) > svg {
+  color: #527be0;
+  transform: scale(1.06);
+}
+.workspace-search.workspace-search input,
+.workspace-search.workspace-search input:focus-visible {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
+.search-input-shell { border: 1px solid var(--input); border-radius: var(--radius-lg); }
+@media (prefers-reduced-motion: reduce) {
+  .workspace-search.workspace-search, .workspace-search.workspace-search > svg { transition: none; }
+  .workspace-search.workspace-search:is(:hover, :focus-within) > svg { transform: none; }
+}

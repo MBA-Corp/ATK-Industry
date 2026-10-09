@@ -1,4 +1,4 @@
-import { getEcho } from "~/lib/echo";
+import { getEcho } from "~/lib/realtime/echo";
 
 export function subscribeToPrivateChannel(channelName: string) {
   const echo = getEcho();

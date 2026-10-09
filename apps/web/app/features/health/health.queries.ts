@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { checkHealth } from "~/services/health.service";
+import { checkHealth } from "~/features/health/health.service";
 
 const healthQueryKey = ["health"] as const;
 

@@ -6,6 +6,9 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  ...(process.env.NODE_ENV === "development"
+    ? [route("preview/dashboard", "routes/dashboard-preview.tsx")]
+    : []),
   index("routes/home.tsx"),
   route("login", "routes/login.tsx"),
 

@@ -1,5 +1,5 @@
 import { Button } from "~/components/ui/button";
-import { useHealthQuery } from "~/hooks/use-health-query";
+import { useHealthQuery } from "~/features/health/health.queries";
 
 export function HealthStatus() {
   const healthQuery = useHealthQuery();
