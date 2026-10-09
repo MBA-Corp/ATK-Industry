@@ -1,4 +1,4 @@
-import { ApiError, apiJson } from "../../services/api";
+import { ApiError, apiJson } from "~/lib/api";
 
 import type { CurrentUser, DataResponse, LoginInput } from "./auth.types";
 
@@ -8,9 +8,10 @@ export async function initializeCsrf(): Promise<void> {
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
-    const response = await apiJson<DataResponse<CurrentUser>>("/api/v1/me");
+    const response =
+      await apiJson<DataResponse<{ user: CurrentUser }>>("/api/v1/me");
 
-    return response.data;
+    return response.data.user;
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       return null;

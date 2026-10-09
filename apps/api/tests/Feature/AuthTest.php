@@ -3,12 +3,43 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\LocalAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_seeded_admin_can_login_and_load_owner_profile(): void
+    {
+        $this->seed(LocalAdminSeeder::class);
+        $this->seed(LocalAdminSeeder::class);
+
+        $this->postJson('/login', [
+            'username' => 'admin',
+            'password' => 'admin',
+        ])->assertOk();
+
+        $this->getJson('/api/v1/me')
+            ->assertOk()
+            ->assertJsonPath('data.user.username', 'admin')
+            ->assertJsonPath('data.user.roles', ['owner'])
+            ->assertJsonMissingPath('data.user.password');
+
+        $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_registration_is_not_available(): void
+    {
+        $this->get('/register')->assertNotFound();
+        $this->postJson('/register', [
+            'username' => 'new-user',
+            'password' => 'password123',
+        ])->assertNotFound();
+
+        $this->assertDatabaseCount('users', 0);
+    }
 
     public function test_active_user_can_login_with_username(): void
     {

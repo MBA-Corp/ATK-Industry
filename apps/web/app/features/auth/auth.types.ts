@@ -16,12 +16,12 @@ export interface CurrentUser {
   username: string;
   email: string | null;
   is_active: boolean;
-  roles: Role[];
+  roles: string[];
   permissions: string[];
 }
 
 export interface LoginInput {
-  login: string;
+  username: string;
   password: string;
 }
 

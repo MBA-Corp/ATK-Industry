@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "~/lib/query-client";
+import { ToastProvider } from "~/components/toast-provider";
 import {
   isRouteErrorResponse,
   Link,
@@ -12,6 +13,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import "./components/print-list.css";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -34,7 +36,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ToastProvider>
+        <Outlet />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

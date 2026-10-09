@@ -1,0 +1,88 @@
+.plain-print-list {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm 12mm;
+  }
+  html body .dashboard-sidebar,
+  html body .dashboard-topbar,
+  html body .dashboard-footer,
+  html body .app-toast,
+  html body .products-page > :not(.plain-print-list),
+  html body .inventory-page > :not(.plain-print-list) {
+    display: none !important;
+  }
+  html body .dashboard-workspace,
+  html body .dashboard-main,
+  html body .dashboard-content,
+  html body .products-page,
+  html body .inventory-page {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+  html body .plain-print-list {
+    display: block !important;
+    color: black;
+    font:
+      9pt/1.4 Arial,
+      sans-serif;
+  }
+  html body .plain-print-list header {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid black;
+  }
+  html body .plain-print-list h1 {
+    font-size: 19pt;
+    font-weight: 700;
+    margin: 4px 0;
+  }
+  html body .plain-print-list h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    margin: 20px 0 8px;
+    break-after: avoid;
+  }
+  html body .plain-print-list p {
+    font-size: 8pt;
+    margin: 6px 0 10px;
+  }
+  html body .plain-print-list table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+    table-layout: auto;
+  }
+  html body .plain-print-list thead {
+    display: table-header-group;
+  }
+  html body .plain-print-list th,
+  html body .plain-print-list td {
+    padding: 7px 5px;
+    border: 0;
+    border-bottom: 1px solid #d1d5db;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    background: white;
+  }
+  html body .plain-print-list th {
+    font-weight: 700;
+    border-top: 1px solid #64748b;
+    border-bottom: 1px solid #64748b;
+  }
+  html body .plain-print-list tr {
+    break-inside: avoid;
+  }
+  html body .plain-print-list .print-number {
+    text-align: right;
+    white-space: nowrap;
+  }
+}

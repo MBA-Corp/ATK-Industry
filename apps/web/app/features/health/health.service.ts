@@ -1,4 +1,4 @@
-import { apiFetch } from "~/services/api";
+import { apiFetch } from "~/lib/api";
 
 export async function checkHealth(): Promise<Response> {
   const response = await apiFetch("/api/v1/health");

@@ -9,6 +9,8 @@ import {
 } from "react-router";
 
 import { LoadingScreen } from "~/components/loading-screen";
+import { useToast } from "~/components/toast-provider";
+import { DashboardShell } from "~/features/dashboard/dashboard-shell";
 import { Button } from "~/components/ui/button";
 import {
   useCurrentUserQuery,
@@ -52,6 +54,7 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export default function AppLayout() {
+  const notify = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const location = useLocation();
@@ -102,17 +105,35 @@ export default function AppLayout() {
   async function handleLogout() {
     try {
       await logoutMutation.mutateAsync();
+      notify("Anda berhasil keluar dari akun.");
 
       navigate("/login", {
         replace: true,
       });
     } catch {
-      // The mutation exposes its error state.
-      // UI feedback can be improved later with toast.
+      notify("Belum dapat keluar dari akun. Silakan coba lagi.", "error");
     }
   }
 
-  return (
+  return [
+    "/dashboard",
+    "/products",
+    "/inventory",
+    "/purchases",
+    "/suppliers",
+    "/reports",
+  ].includes(location.pathname) ? (
+    <DashboardShell
+      name={user.name}
+      role={user.roles.join(", ") || "Pengguna toko"}
+      onLogout={handleLogout}
+      isLoggingOut={logoutMutation.isPending}
+      logoutError={logoutMutation.isError}
+    >
+      {isNavigating && <LoadingScreen />}
+      <Outlet />
+    </DashboardShell>
+  ) : (
     <div className="min-h-screen bg-background text-foreground">
       {isNavigating && <LoadingScreen />}
 
