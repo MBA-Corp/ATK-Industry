@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\InventoryBalance;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Role;
+use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
@@ -137,6 +139,41 @@ class PurchaseReceivingTest extends TestCase
             ]);
 
         return [
+            $purchase,
+            $purchaseItem,
+        ];
+    }
+
+    private function purchaseFixture(
+        string $purchaseNumber,
+        float $conversionToBase
+    ): array {
+        $supplier = $this->supplier();
+
+        [
+            $purchase,
+            $purchaseItem,
+        ] = $this->purchaseWithOneItem(
+            $supplier,
+            $purchaseNumber
+        );
+
+        $productUnit = $purchaseItem->productUnit;
+
+        $productUnit->update([
+            'conversion_to_base' => $conversionToBase,
+            'is_base' => $conversionToBase === 1.0,
+        ]);
+
+        $purchaseItem->update([
+            'conversion_to_base' => $conversionToBase,
+        ]);
+
+        $product = $productUnit->product;
+
+        return [
+            $product,
+            $productUnit,
             $purchase,
             $purchaseItem,
         ];
@@ -599,6 +636,80 @@ class PurchaseReceivingTest extends TestCase
             )
             ->assertUnprocessable()
             ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('purchase_receipts', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_receiving_uses_exact_half_up_stock_conversion(): void
+    {
+        $user = $this->userWithPermission('purchase.receive');
+        [
+            $product,
+            ,
+            $purchase,
+            $purchaseItem,
+        ] = $this->purchaseFixture(
+            'INV-EXACT-HALF',
+            0.5
+        );
+        $this->actingAs($user)
+            ->postJson(
+                "/api/v1/purchases/{$purchase->id}/receive",
+                [
+                    'items' => [
+                        [
+                            'purchase_item_id' => $purchaseItem->id,
+                            'qty_received' => '0.000001',
+                        ],
+                    ],
+                ]
+            )
+            ->assertOk();
+        $this->assertSame(
+            '0.000001',
+            InventoryBalance::query()
+                ->where('product_id', $product->id)
+                ->firstOrFail()
+                ->quantity_base
+        );
+        $this->assertSame(
+            '0.000001',
+            StockMovement::query()
+                ->firstOrFail()
+                ->quantity_delta_base
+        );
+    }
+
+    public function test_receiving_conversion_overflow_rolls_back(): void
+    {
+        $user = $this->userWithPermission('purchase.receive');
+        [
+            ,
+            ,
+            $purchase,
+            $purchaseItem,
+        ] = $this->purchaseFixture(
+            'INV-CONVERSION-OVERFLOW',
+            2
+        );
+        $this->actingAs($user)
+            ->postJson(
+                "/api/v1/purchases/{$purchase->id}/receive",
+                [
+                    'items' => [
+                        [
+                            'purchase_item_id' => $purchaseItem->id,
+                            'qty_received' => '999999999999.999999',
+                        ],
+                    ],
+                ]
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseHas('purchases', [
+            'id' => $purchase->id,
+            'status' => 'DRAFT',
+        ]);
         $this->assertDatabaseCount('purchase_receipts', 0);
         $this->assertDatabaseCount('stock_movements', 0);
     }

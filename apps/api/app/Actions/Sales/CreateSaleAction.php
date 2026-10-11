@@ -5,9 +5,14 @@ namespace App\Actions\Sales;
 use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Models\ProductUnit;
 use App\Models\Sale;
+use App\Support\DecimalMath;
+use App\Support\MoneyMath;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use OverflowException;
 
 class CreateSaleAction
 {
@@ -96,33 +101,27 @@ class CreateSaleAction
                         ]);
                     }
 
-                    $quantity = (float) $item[
-                        'quantity'
-                    ];
-
-                    $lineTotal = (int) round(
-                        $quantity * $salePrice
-                    );
-
-                    $subtotal += $lineTotal;
+                    $quantity = (string) $item['quantity'];
+                    try {
+                        $lineTotal = MoneyMath::lineTotal(
+                            $quantity,
+                            $salePrice
+                        );
+                        $subtotal = MoneyMath::add(
+                            $subtotal,
+                            $lineTotal
+                        );
+                    } catch (OverflowException $exception) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Sale total exceeds supported integer range.',
+                        ]);
+                    }
 
                     $preparedItems[] = [
                         'product_unit' => $productUnit,
 
-                        'quantity' => number_format(
-                            $quantity,
-                            6,
-                            '.',
-                            ''
-                        ),
-
-                        'conversion_to_base' => number_format(
-                            (float) $productUnit
-                                ->conversion_to_base,
-                            6,
-                            '.',
-                            ''
-                        ),
+                        'quantity' => $quantity,
+                        'conversion_to_base' => $productUnit->conversion_to_base,
 
                         'catalog_unit_price' => $catalogPrice,
 
@@ -134,11 +133,19 @@ class CreateSaleAction
 
                 $soldAt = $validated['sold_at']
                     ?? now();
-                $paymentTotal = collect(
-                    $validated['payments']
-                )->sum(
-                    fn (array $payment) => (int) $payment['amount']
-                );
+                $paymentTotal = 0;
+                try {
+                    foreach ($validated['payments'] as $payment) {
+                        $paymentTotal = MoneyMath::add(
+                            $paymentTotal,
+                            (int) $payment['amount']
+                        );
+                    }
+                } catch (OverflowException $exception) {
+                    throw ValidationException::withMessages([
+                        'payments' => 'Payment total exceeds supported integer range.',
+                    ]);
+                }
 
                 if ($paymentTotal !== $subtotal) {
                     throw ValidationException::withMessages([
@@ -248,17 +255,21 @@ class CreateSaleAction
                             ],
                         ]);
 
-                    $quantityDeltaBase = number_format(
-                        -(
-                            (float) $item['quantity']
-                            * (float) $item[
-                                'conversion_to_base'
-                            ]
-                        ),
-                        6,
-                        '.',
-                        ''
-                    );
+                    try {
+                        $quantityDeltaBase = DecimalMath::multiply(
+                            '-'.(string) $item['quantity'],
+                            (string) $item['conversion_to_base']
+                        );
+                    } catch (DomainException|InvalidArgumentException|OverflowException $exception) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Sale quantity or unit conversion exceeds supported inventory precision or range.',
+                        ]);
+                    }
+                    if (! str_starts_with($quantityDeltaBase, '-')) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Sale quantity must produce a valid negative inventory movement.',
+                        ]);
+                    }
 
                     $this->applyStockMovement->execute(
                         productId: $productUnit

@@ -4,8 +4,13 @@ namespace App\Actions\Sales;
 
 use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Models\Sale;
+use App\Models\StockMovement;
+use App\Support\DecimalMath;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use OverflowException;
 
 class CancelSaleAction
 {
@@ -63,15 +68,44 @@ class CancelSaleAction
                     ->sortBy('product_id');
 
                 foreach ($items as $item) {
-                    $quantityDeltaBase =
-                        number_format(
-                            (float) $item->quantity
-                            * (float) $item
-                                ->conversion_to_base,
-                            6,
-                            '.',
-                            ''
-                        );
+                    $originalMovement = StockMovement::query()
+                        ->where('source_type', 'SALE_ITEM')
+                        ->where('source_id', $item->id)
+                        ->first();
+
+                    if ($originalMovement !== null) {
+                        $originalDelta = (string) $originalMovement
+                            ->quantity_delta_base;
+
+                        if (
+                            (int) $originalMovement->product_id !== (int) $item->product_id
+                            || ! str_starts_with($originalDelta, '-')
+                            || $originalDelta === '-0.000000'
+                        ) {
+                            throw ValidationException::withMessages([
+                                'sale' => 'Original sale stock movement is invalid.',
+                            ]);
+                        }
+
+                        $quantityDeltaBase = substr($originalDelta, 1);
+                    } else {
+                        try {
+                            $quantityDeltaBase = DecimalMath::multiply(
+                                (string) $item->quantity,
+                                (string) $item->conversion_to_base
+                            );
+                        } catch (DomainException|InvalidArgumentException|OverflowException $exception) {
+                            throw ValidationException::withMessages([
+                                'sale' => 'Sale cancellation exceeds supported inventory precision or range.',
+                            ]);
+                        }
+
+                        if ($quantityDeltaBase === '0.000000') {
+                            throw ValidationException::withMessages([
+                                'sale' => 'Sale cancellation cannot reverse zero stock quantity.',
+                            ]);
+                        }
+                    }
 
                     $this->applyStockMovement->execute(
                         productId: $item->product_id,

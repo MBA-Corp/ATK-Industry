@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\ProductUnit;
+use App\Support\DecimalMath;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -26,24 +27,21 @@ class StoreStockAdjustmentRequest extends FormRequest
                     'ADJUSTMENT',
                 ]),
             ],
-
             'product_unit_id' => [
                 'required',
                 'integer',
                 'exists:product_units,id',
             ],
-
             'quantity' => [
                 'required',
                 'numeric',
+                'regex:/\A-?\d{1,12}(?:\.\d{1,6})?\z/',
             ],
-
             'reason' => [
                 'required',
                 'string',
                 'max:2000',
             ],
-
             'occurred_at' => [
                 'sometimes',
                 'date',
@@ -55,92 +53,55 @@ class StoreStockAdjustmentRequest extends FormRequest
     {
         return [
             function (Validator $validator) {
-                $productUnit =
-                    ProductUnit::query()
-                        ->whereKey(
-                            $this->input(
-                                'product_unit_id'
-                            )
-                        )
-                        ->where(
-                            'product_id',
-                            $this->route(
-                                'productId'
-                            )
-                        )
-                        ->where(
-                            'is_active',
-                            true
-                        )
-                        ->first();
+                if ($validator->errors()->isNotEmpty()) {
+                    return;
+                }
+
+                $productUnit = ProductUnit::query()
+                    ->whereKey($this->input('product_unit_id'))
+                    ->where('product_id', $this->route('productId'))
+                    ->where('is_active', true)
+                    ->first();
 
                 if ($productUnit === null) {
-                    $validator
-                        ->errors()
-                        ->add(
-                            'product_unit_id',
-                            'Product unit must be active and belong to the selected product.'
-                        );
+                    $validator->errors()->add(
+                        'product_unit_id',
+                        'Product unit must be active and belong to the selected product.'
+                    );
                 }
 
-                $type = $this->input(
-                    'adjustment_type'
+                $type = $this->input('adjustment_type');
+                $quantity = DecimalMath::normalize(
+                    (string) $this->input('quantity')
                 );
-
-                $quantity = (float) $this->input(
-                    'quantity',
-                    0
-                );
+                $isNegative = str_starts_with($quantity, '-');
+                $isZero = $quantity === '0.000000';
 
                 if (
-                    in_array(
-                        $type,
-                        [
-                            'STOCK_OPNAME',
-                            'DAMAGE',
-                            'LOSS',
-                        ],
-                        true
-                    )
-                    && $quantity < 0
+                    in_array($type, ['STOCK_OPNAME', 'DAMAGE', 'LOSS'], true)
+                    && $isNegative
                 ) {
-                    $validator
-                        ->errors()
-                        ->add(
-                            'quantity',
-                            'Quantity cannot be negative for this adjustment type.'
-                        );
+                    $validator->errors()->add(
+                        'quantity',
+                        'Quantity cannot be negative for this adjustment type.'
+                    );
                 }
 
                 if (
-                    in_array(
-                        $type,
-                        [
-                            'DAMAGE',
-                            'LOSS',
-                        ],
-                        true
-                    )
-                    && $quantity <= 0
+                    in_array($type, ['DAMAGE', 'LOSS'], true)
+                    && $isZero
                 ) {
-                    $validator
-                        ->errors()
-                        ->add(
-                            'quantity',
-                            'Quantity must be greater than zero.'
-                        );
+                    $validator->errors()->add(
+                        'quantity',
+                        'Quantity must be greater than zero.'
+                    );
                 }
 
-                if (
-                    $type === 'ADJUSTMENT'
-                    && $quantity == 0
-                ) {
-                    $validator
-                        ->errors()
-                        ->add(
-                            'quantity',
-                            'Adjustment quantity cannot be zero.'
-                        );
+                if ($type === 'ADJUSTMENT' && $isZero) {
+                    $validator->errors()->add(
+                        'quantity',
+                        'Adjustment quantity cannot be zero.'
+                    );
                 }
             },
         ];

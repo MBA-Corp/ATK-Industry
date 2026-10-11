@@ -5,8 +5,11 @@ namespace App\Actions\Inventory;
 use App\Models\InventoryBalance;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Support\DecimalMath;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use OverflowException;
 
 class ApplyStockMovementAction
 {
@@ -80,46 +83,30 @@ class ApplyStockMovementAction
                         ->lockForUpdate()
                         ->firstOrFail();
 
-                $quantityBefore =
-                    (float) $balance
-                        ->quantity_base;
+                try {
+                    $quantityBeforeFormatted = DecimalMath::normalize(
+                        (string) $balance->quantity_base
+                    );
 
-                $delta =
-                    (float) $quantityDeltaBase;
+                    $deltaFormatted = DecimalMath::normalize(
+                        (string) $quantityDeltaBase
+                    );
 
-                $quantityAfter =
-                    $quantityBefore
-                    + $delta;
+                    $quantityAfterFormatted = DecimalMath::add(
+                        $quantityBeforeFormatted,
+                        $deltaFormatted
+                    );
+                } catch (InvalidArgumentException|OverflowException $exception) {
+                    throw ValidationException::withMessages([
+                        'quantity_delta_base' => 'Stock movement exceeds supported decimal precision or range.',
+                    ]);
+                }
 
-                if ($quantityAfter < 0) {
+                if (str_starts_with($quantityAfterFormatted, '-')) {
                     throw ValidationException::withMessages([
                         'quantity_delta_base' => 'Stock movement cannot result in negative inventory.',
                     ]);
                 }
-
-                $quantityBeforeFormatted =
-                    number_format(
-                        $quantityBefore,
-                        6,
-                        '.',
-                        ''
-                    );
-
-                $deltaFormatted =
-                    number_format(
-                        $delta,
-                        6,
-                        '.',
-                        ''
-                    );
-
-                $quantityAfterFormatted =
-                    number_format(
-                        $quantityAfter,
-                        6,
-                        '.',
-                        ''
-                    );
 
                 $balance->update([
                     'quantity_base' => $quantityAfterFormatted,

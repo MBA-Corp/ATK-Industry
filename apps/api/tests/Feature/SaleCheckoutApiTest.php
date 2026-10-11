@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\Role;
+use App\Models\StockMovement;
 use App\Models\Terminal;
 use App\Models\Unit;
 use App\Models\User;
@@ -778,6 +779,334 @@ class SaleCheckoutApiTest extends TestCase
                 'product_id' => $product->id,
                 'quantity_base' => 10,
             ]
+        );
+    }
+
+    public function test_fractional_sale_uses_exact_half_up_total(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$product, $productUnit] = $this->product(
+            'SALE-MONEY-FRACTION',
+            'PCS-FRACTION',
+            1,
+            1
+        );
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => 10,
+        ]);
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => '0.500000',
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 1,
+                    ],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.subtotal', 1)
+            ->assertJsonPath('data.grand_total', 1)
+            ->assertJsonPath('data.items.0.line_total', 1);
+        $this->assertDatabaseHas('inventory_balances', [
+            'product_id' => $product->id,
+            'quantity_base' => 9.5,
+        ]);
+    }
+
+    public function test_sale_preserves_large_integer_price_exactly(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$product, $productUnit] = $this->product(
+            'SALE-MONEY-EXACT',
+            'PCS-EXACT',
+            1,
+            9007199254740993
+        );
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => 10,
+        ]);
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => 1,
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 9007199254740993,
+                    ],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath(
+                'data.grand_total',
+                9007199254740993
+            );
+        $this->assertDatabaseHas('sale_items', [
+            'product_id' => $product->id,
+            'line_total' => 9007199254740993,
+        ]);
+    }
+
+    public function test_sale_rejects_invalid_quantity_precision(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [, $productUnit] = $this->product(
+            'SALE-QTY-PRECISION'
+        );
+        foreach (['1.1234567', '1000000000000', '1e-7'] as $quantity) {
+            $this->actingAs($user)
+                ->postJson('/api/v1/sales', [
+                    'terminal_id' => $terminal->id,
+                    'items' => [
+                        [
+                            'product_unit_id' => $productUnit->id,
+                            'quantity' => $quantity,
+                        ],
+                    ],
+                    'payments' => [
+                        [
+                            'payment_method' => 'CASH',
+                            'amount' => 5000,
+                        ],
+                    ],
+                ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('items.0.quantity');
+        }
+        $this->assertDatabaseCount('sales', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_sale_monetary_overflow_rolls_back(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [, $productUnit] = $this->product(
+            'SALE-MONEY-OVERFLOW'
+        );
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => '999999999999.999999',
+                        'sale_unit_price' => 1000000000,
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 1,
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('sales', 0);
+        $this->assertDatabaseCount('sale_items', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_sale_rejects_payment_sum_overflow(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [, $productUnit] = $this->product(
+            'SALE-PAYMENT-OVERFLOW'
+        );
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => 1,
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => PHP_INT_MAX,
+                    ],
+                    [
+                        'payment_method' => 'QRIS',
+                        'amount' => 1,
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath(
+                'errors.payments.0',
+                'Payment total exceeds supported integer range.'
+            );
+        $this->assertDatabaseCount('sales', 0);
+    }
+
+    public function test_sale_rejects_invalid_items_structure(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => 'invalid',
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 5000,
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('sales', 0);
+    }
+
+    public function test_sale_uses_exact_half_up_stock_conversion(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$product, $productUnit] = $this->product(
+            'SALE-STOCK-HALF',
+            'HALF',
+            0.5,
+            1000000
+        );
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => 1,
+        ]);
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => '0.000001',
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 1,
+                    ],
+                ],
+            ])
+            ->assertCreated();
+        $this->assertSame(
+            '0.999999',
+            InventoryBalance::query()
+                ->where('product_id', $product->id)
+                ->firstOrFail()
+                ->quantity_base
+        );
+        $this->assertSame(
+            '-0.000001',
+            StockMovement::query()
+                ->firstOrFail()
+                ->quantity_delta_base
+        );
+    }
+
+    public function test_sale_rejects_conversion_below_stock_precision(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$product, $productUnit] = $this->product(
+            'SALE-STOCK-UNDERFLOW',
+            'TINY',
+            0.000001,
+            1000000
+        );
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => 1,
+        ]);
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => '0.000001',
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 1,
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('sales', 0);
+        $this->assertDatabaseCount('sale_items', 0);
+        $this->assertDatabaseCount('sale_payments', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame(
+            '1.000000',
+            InventoryBalance::firstOrFail()->quantity_base
+        );
+    }
+
+    public function test_sale_rejects_conversion_overflow_atomically(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$product, $productUnit] = $this->product(
+            'SALE-STOCK-OVERFLOW',
+            'PACK-OVERFLOW',
+            2,
+            1
+        );
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => 1,
+        ]);
+        $this->actingAs($user)
+            ->postJson('/api/v1/sales', [
+                'terminal_id' => $terminal->id,
+                'items' => [
+                    [
+                        'product_unit_id' => $productUnit->id,
+                        'quantity' => '999999999999.999999',
+                    ],
+                ],
+                'payments' => [
+                    [
+                        'payment_method' => 'CASH',
+                        'amount' => 1000000000000,
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('sales', 0);
+        $this->assertDatabaseCount('sale_items', 0);
+        $this->assertDatabaseCount('sale_payments', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame(
+            '1.000000',
+            InventoryBalance::firstOrFail()->quantity_base
         );
     }
 }

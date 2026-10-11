@@ -4,9 +4,13 @@ namespace App\Actions\Purchasing;
 
 use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Models\Purchase;
+use App\Support\DecimalMath;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use OverflowException;
 
 class ReceivePurchaseAction
 {
@@ -111,20 +115,25 @@ class ReceivePurchaseAction
                         ?? $productUnit
                             ->conversion_to_base;
 
-                    $quantityDeltaBase =
-                        number_format(
-                            (float) $actualQuantity
-                            * (float) $conversionToBase,
-                            6,
-                            '.',
-                            ''
+                    try {
+                        $quantityDeltaBase = DecimalMath::multiply(
+                            (string) $actualQuantity,
+                            (string) $conversionToBase
                         );
+                    } catch (DomainException|InvalidArgumentException|OverflowException $exception) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Received quantity or unit conversion exceeds supported inventory precision or range.',
+                        ]);
+                    }
                     if (
-                        (float) $actualQuantity > 0
-                        && (float) $quantityDeltaBase <= 0
+                        str_starts_with($quantityDeltaBase, '-')
+                        || (
+                            $quantityDeltaBase === '0.000000'
+                            && DecimalMath::normalize((string) $actualQuantity) !== '0.000000'
+                        )
                     ) {
                         throw ValidationException::withMessages([
-                            'items' => 'Received quantity is too small for inventory precision.',
+                            'items' => 'Received quantity must produce a valid non-negative inventory movement.',
                         ]);
                     }
 
