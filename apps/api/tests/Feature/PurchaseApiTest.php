@@ -759,4 +759,36 @@ class PurchaseApiTest extends TestCase
             ->assertJsonValidationErrors('items');
         $this->assertDatabaseCount('purchases', 0);
     }
+
+    public function test_purchase_overflow_returns_validation_error_without_creating_records(): void
+    {
+        $user = $this->userWithPermission('purchase.create');
+        $supplier = $this->supplier('SUP-MONEY-OVERFLOW');
+        [
+            ,
+            $productUnit,
+            $productSupplier,
+        ] = $this->productSupplier(
+            $supplier,
+            'ATK-MONEY-OVERFLOW',
+            'PCS-MONEY'
+        );
+        $this->actingAs($user)
+            ->postJson('/api/v1/purchases', [
+                'supplier_id' => $supplier->id,
+                'purchase_date' => '2026-10-11',
+                'items' => [
+                    [
+                        'product_supplier_id' => $productSupplier->id,
+                        'product_unit_id' => $productUnit->id,
+                        'qty_ordered' => '999999999999.999999',
+                        'purchase_price' => 1000000000,
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('purchases', 0);
+        $this->assertDatabaseCount('purchase_items', 0);
+    }
 }

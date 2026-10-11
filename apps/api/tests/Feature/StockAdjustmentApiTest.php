@@ -494,4 +494,151 @@ class StockAdjustmentApiTest extends TestCase
             0
         );
     }
+
+    public function test_damage_preserves_half_up_decimal_precision(): void
+    {
+        $user = $this->userWithPermission();
+        [$product, $productUnit] = $this->product(
+            'ADJ-PRECISION-HALF',
+            'HALF',
+            0.5
+        );
+
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => 1,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+                'adjustment_type' => 'DAMAGE',
+                'product_unit_id' => $productUnit->id,
+                'quantity' => '0.000001',
+                'reason' => 'Precision damage test',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.quantity_delta_base', '-0.000001')
+            ->assertJsonPath('data.quantity_after_base', '0.999999');
+
+        $this->assertSame(
+            '0.999999',
+            InventoryBalance::firstOrFail()->quantity_base
+        );
+    }
+
+    public function test_stock_adjustment_rejects_excess_decimal_places(): void
+    {
+        $user = $this->userWithPermission();
+        [$product, $productUnit] = $this->product(
+            'ADJ-INVALID-PRECISION'
+        );
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+                'adjustment_type' => 'ADJUSTMENT',
+                'product_unit_id' => $productUnit->id,
+                'quantity' => '0.0000001',
+                'reason' => 'Too many decimal places',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('quantity');
+
+        $this->assertDatabaseCount('stock_adjustments', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_stock_adjustment_rejects_conversion_underflow(): void
+    {
+        $user = $this->userWithPermission();
+        [$product, $productUnit] = $this->product(
+            'ADJ-UNDERFLOW',
+            'TINY',
+            0.000001
+        );
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+                'adjustment_type' => 'ADJUSTMENT',
+                'product_unit_id' => $productUnit->id,
+                'quantity' => '0.000001',
+                'reason' => 'Conversion underflow',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('quantity');
+
+        $this->assertDatabaseCount('stock_adjustments', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_stock_opname_zero_clears_fractional_stock(): void
+    {
+        $user = $this->userWithPermission();
+        [$product, $productUnit] = $this->product(
+            'ADJ-OPNAME-ZERO'
+        );
+
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => '0.123456',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+                'adjustment_type' => 'STOCK_OPNAME',
+                'product_unit_id' => $productUnit->id,
+                'quantity' => 0,
+                'reason' => 'Physical stock is empty',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.quantity_delta_base', '-0.123456')
+            ->assertJsonPath('data.quantity_after_base', '0.000000');
+
+        $this->assertSame(
+            '0.000000',
+            InventoryBalance::firstOrFail()->quantity_base
+        );
+    }
+
+    public function test_stock_adjustment_rejects_conversion_overflow(): void
+    {
+        $user = $this->userWithPermission();
+        [$product, $productUnit] = $this->product(
+            'ADJ-OVERFLOW',
+            'PACK-OVERFLOW',
+            2
+        );
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+                'adjustment_type' => 'ADJUSTMENT',
+                'product_unit_id' => $productUnit->id,
+                'quantity' => '999999999999.999999',
+                'reason' => 'Conversion overflow',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('quantity');
+
+        $this->assertDatabaseCount('stock_adjustments', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_stock_adjustment_rejects_invalid_request_structure(): void
+    {
+        $user = $this->userWithPermission();
+        [$product] = $this->product(
+            'ADJ-INVALID-STRUCTURE'
+        );
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+                'adjustment_type' => 'ADJUSTMENT',
+                'product_unit_id' => ['invalid'],
+                'quantity' => 1,
+                'reason' => 'Invalid structure',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('product_unit_id');
+
+        $this->assertDatabaseCount('stock_adjustments', 0);
+    }
 }

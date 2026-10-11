@@ -61,6 +61,7 @@ class StoreSaleRequest extends FormRequest
                 'required',
                 'numeric',
                 'gt:0',
+                'regex:/\A\d{1,12}(?:\.\d{1,6})?\z/',
             ],
 
             'items.*.sale_unit_price' => [
@@ -104,6 +105,9 @@ class StoreSaleRequest extends FormRequest
     {
         return [
             function (Validator $validator) {
+                if ($validator->errors()->isNotEmpty()) {
+                    return;
+                }
                 foreach (
                     $this->input('items', []) as $index => $item
                 ) {

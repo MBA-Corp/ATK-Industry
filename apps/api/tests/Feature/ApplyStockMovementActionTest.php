@@ -311,4 +311,79 @@ class ApplyStockMovementActionTest extends TestCase
             $movement->reason
         );
     }
+
+    public function test_stock_movement_preserves_micro_quantity_precision(): void
+    {
+        $product = Product::create([
+            'sku' => 'STOCK-PRECISION-001',
+            'name' => 'Precision Test Product',
+        ]);
+
+        InventoryBalance::create([
+            'product_id' => $product->id,
+            'quantity_base' => '0.100001',
+        ]);
+
+        $movement = app(ApplyStockMovementAction::class)
+            ->execute(
+                productId: $product->id,
+                movementType: 'ADJUSTMENT',
+                sourceType: 'PRECISION_TEST',
+                sourceId: 1001,
+                quantityDeltaBase: '0.000001'
+            );
+
+        $this->assertSame(
+            '0.100001',
+            $movement->quantity_before_base
+        );
+
+        $this->assertSame(
+            '0.000001',
+            $movement->quantity_delta_base
+        );
+
+        $this->assertSame(
+            '0.100002',
+            $movement->quantity_after_base
+        );
+
+        $this->assertSame(
+            '0.100002',
+            InventoryBalance::query()
+                ->where('product_id', $product->id)
+                ->firstOrFail()
+                ->quantity_base
+        );
+    }
+
+    public function test_stock_movement_rejects_excess_decimal_precision(): void
+    {
+        $product = Product::create([
+            'sku' => 'STOCK-PRECISION-002',
+            'name' => 'Precision Validation Product',
+        ]);
+
+        try {
+            app(ApplyStockMovementAction::class)
+                ->execute(
+                    productId: $product->id,
+                    movementType: 'ADJUSTMENT',
+                    sourceType: 'PRECISION_TEST',
+                    sourceId: 1002,
+                    quantityDeltaBase: '0.0000001'
+                );
+
+            $this->fail('Expected ValidationException.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey(
+                'quantity_delta_base',
+                $exception->errors()
+            );
+        }
+
+        $this->assertDatabaseCount('stock_movements', 0);
+
+        $this->assertDatabaseCount('inventory_balances', 0);
+    }
 }

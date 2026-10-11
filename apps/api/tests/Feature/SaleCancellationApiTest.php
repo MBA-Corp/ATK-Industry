@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SalePayment;
+use App\Models\StockMovement;
 use App\Models\Terminal;
 use App\Models\Unit;
 use App\Models\User;
@@ -475,6 +476,92 @@ class SaleCancellationApiTest extends TestCase
         $this->assertDatabaseCount(
             'sale_cancellations',
             0
+        );
+    }
+
+    public function test_cancellation_preserves_fractional_stock_precision(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$sale, , $product] = $this->completedSale(
+            $user,
+            $terminal,
+            0.5,
+            0.000001
+        );
+
+        $this->actingAs($user)
+            ->postJson(
+                "/api/v1/sales/{$sale->id}/cancel",
+                ['reason' => 'Fractional stock reversal']
+            )
+            ->assertOk();
+
+        $this->assertSame(
+            '50.000001',
+            InventoryBalance::query()
+                ->where('product_id', $product->id)
+                ->firstOrFail()
+                ->quantity_base
+        );
+
+        $this->assertSame(
+            '0.000001',
+            StockMovement::query()
+                ->where('source_type', 'SALE_CANCELLATION_ITEM')
+                ->firstOrFail()
+                ->quantity_delta_base
+        );
+    }
+
+    public function test_cancellation_reverses_original_stock_movement_exactly(): void
+    {
+        $user = $this->userWithPermission();
+        $terminal = $this->terminal();
+        [$sale, $saleItem, $product] = $this->completedSale(
+            $user,
+            $terminal,
+            0.5,
+            0.5
+        );
+
+        StockMovement::create([
+            'product_id' => $product->id,
+            'product_unit_id' => $saleItem->product_unit_id,
+            'movement_type' => 'SALE',
+            'source_type' => 'SALE_ITEM',
+            'source_id' => $saleItem->id,
+            'source_quantity' => '0.500000',
+            'conversion_to_base' => '0.500000',
+            'quantity_delta_base' => '-0.250001',
+            'quantity_before_base' => '50.250001',
+            'quantity_after_base' => '50.000000',
+            'actor_user_id' => $user->id,
+            'terminal_id' => $terminal->id,
+            'occurred_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(
+                "/api/v1/sales/{$sale->id}/cancel",
+                ['reason' => 'Reverse original movement']
+            )
+            ->assertOk();
+
+        $this->assertSame(
+            '50.250001',
+            InventoryBalance::query()
+                ->where('product_id', $product->id)
+                ->firstOrFail()
+                ->quantity_base
+        );
+
+        $this->assertSame(
+            '0.250001',
+            StockMovement::query()
+                ->where('source_type', 'SALE_CANCELLATION_ITEM')
+                ->firstOrFail()
+                ->quantity_delta_base
         );
     }
 }
