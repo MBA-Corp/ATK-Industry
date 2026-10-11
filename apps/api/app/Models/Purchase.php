@@ -69,4 +69,11 @@ class Purchase extends Model
             PurchaseReceipt::class
         );
     }
+
+    public function invoiceAttachment(): HasOne
+    {
+        return $this->hasOne(
+            PurchaseInvoiceAttachment::class
+        );
+    }
 }

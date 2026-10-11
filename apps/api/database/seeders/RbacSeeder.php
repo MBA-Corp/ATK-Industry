@@ -96,6 +96,14 @@ class RbacSeeder extends Seeder
                 'name' => 'Update Company Profile',
                 'code' => 'company_profile.update',
             ],
+            [
+                'name' => 'View Purchase Invoice',
+                'code' => 'purchase.invoice.view',
+            ],
+            [
+                'name' => 'Manage Purchase Invoice',
+                'code' => 'purchase.invoice.manage',
+            ],
         ];
 
         foreach ($permissions as $permission) {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductSupplierController;
 use App\Http\Controllers\Api\V1\PurchaseController;
+use App\Http\Controllers\Api\V1\PurchaseInvoiceController;
 use App\Http\Controllers\Api\V1\SaleController;
 use App\Http\Controllers\Api\V1\StockAdjustmentController;
 use App\Http\Controllers\Api\V1\SupplierController;
@@ -25,6 +26,21 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get(
+            '/purchases/{purchaseId}/invoice',
+            [PurchaseInvoiceController::class, 'show']
+        )->middleware('permission:purchase.invoice.view');
+
+        Route::get(
+            '/purchases/{purchaseId}/invoice/download',
+            [PurchaseInvoiceController::class, 'download']
+        )->middleware('permission:purchase.invoice.view');
+
+        Route::post(
+            '/purchases/{purchaseId}/invoice',
+            [PurchaseInvoiceController::class, 'store']
+        )->middleware('permission:purchase.invoice.manage');
+
         Route::get(
             '/company-profile',
             [CompanyProfileController::class, 'show']
