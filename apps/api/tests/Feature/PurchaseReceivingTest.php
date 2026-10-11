@@ -551,4 +551,55 @@ class PurchaseReceivingTest extends TestCase
             0
         );
     }
+
+    public function test_receiving_rejects_quantity_outside_database_precision(): void
+    {
+        $user = $this->userWithPermission('purchase.receive');
+        $supplier = $this->supplier('SUP-RCV-PRECISION');
+        [$purchase, $purchaseItem] = $this->purchaseWithOneItem(
+            $supplier,
+            'PUR-RCV-PRECISION'
+        );
+        foreach (['1.1234567', '1000000000000', '1e-7'] as $quantity) {
+            $this->actingAs($user)
+                ->postJson(
+                    "/api/v1/purchases/{$purchase->id}/receive",
+                    [
+                        'items' => [
+                            [
+                                'purchase_item_id' => $purchaseItem->id,
+                                'qty_received' => $quantity,
+                            ],
+                        ],
+                    ]
+                )
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('items.0.qty_received');
+        }
+        $this->assertDatabaseHas('purchases', [
+            'id' => $purchase->id,
+            'status' => 'DRAFT',
+        ]);
+        $this->assertDatabaseCount('purchase_receipts', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_invalid_receiving_items_shape_returns_validation_error(): void
+    {
+        $user = $this->userWithPermission('purchase.receive');
+        $supplier = $this->supplier('SUP-RCV-SHAPE');
+        [$purchase] = $this->purchaseWithOneItem(
+            $supplier,
+            'PUR-RCV-SHAPE'
+        );
+        $this->actingAs($user)
+            ->postJson(
+                "/api/v1/purchases/{$purchase->id}/receive",
+                ['items' => 'invalid']
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('purchase_receipts', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
 }

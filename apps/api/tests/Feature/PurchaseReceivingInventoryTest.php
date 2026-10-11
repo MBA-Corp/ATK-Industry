@@ -341,4 +341,39 @@ class PurchaseReceivingInventoryTest extends TestCase
             ]
         );
     }
+
+    public function test_receiving_rejects_quantity_that_rounds_to_zero_stock(): void
+    {
+        $user = $this->user();
+        [
+            ,
+            ,
+            $purchase,
+            $purchaseItem,
+        ] = $this->purchaseFixture(
+            'INV-PRECISION-001',
+            0.000001,
+            1
+        );
+        $this->actingAs($user)
+            ->postJson(
+                "/api/v1/purchases/{$purchase->id}/receive",
+                [
+                    'items' => [
+                        [
+                            'purchase_item_id' => $purchaseItem->id,
+                            'qty_received' => '0.000001',
+                        ],
+                    ],
+                ]
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseHas('purchases', [
+            'id' => $purchase->id,
+            'status' => 'DRAFT',
+        ]);
+        $this->assertDatabaseCount('purchase_receipts', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
 }

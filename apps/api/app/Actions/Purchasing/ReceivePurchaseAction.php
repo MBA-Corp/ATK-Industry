@@ -119,6 +119,14 @@ class ReceivePurchaseAction
                             '.',
                             ''
                         );
+                    if (
+                        (float) $actualQuantity > 0
+                        && (float) $quantityDeltaBase <= 0
+                    ) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Received quantity is too small for inventory precision.',
+                        ]);
+                    }
 
                     $this
                         ->applyStockMovement

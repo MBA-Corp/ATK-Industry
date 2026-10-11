@@ -710,4 +710,53 @@ class PurchaseApiTest extends TestCase
             )
             ->assertUnauthorized();
     }
+
+    public function test_purchase_rejects_quantity_outside_database_precision(): void
+    {
+        $user = $this->userWithPermission('purchase.create');
+        $supplier = $this->supplier('SUP-PRECISION');
+        [
+            ,
+            $productUnit,
+            $productSupplier,
+        ] = $this->productSupplier(
+            $supplier,
+            'ATK-PRECISION',
+            'PCS-PRECISION'
+        );
+        foreach (['1.1234567', '1000000000000', '1e-7'] as $quantity) {
+            $this->actingAs($user)
+                ->postJson('/api/v1/purchases', [
+                    'supplier_id' => $supplier->id,
+                    'purchase_date' => '2026-10-11',
+                    'items' => [
+                        [
+                            'product_supplier_id' => $productSupplier->id,
+                            'product_unit_id' => $productUnit->id,
+                            'qty_ordered' => $quantity,
+                            'purchase_price' => 5000,
+                        ],
+                    ],
+                ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('items.0.qty_ordered');
+        }
+        $this->assertDatabaseCount('purchases', 0);
+        $this->assertDatabaseCount('purchase_items', 0);
+    }
+
+    public function test_invalid_purchase_items_shape_returns_validation_error(): void
+    {
+        $user = $this->userWithPermission('purchase.create');
+        $supplier = $this->supplier('SUP-SHAPE');
+        $this->actingAs($user)
+            ->postJson('/api/v1/purchases', [
+                'supplier_id' => $supplier->id,
+                'purchase_date' => '2026-10-11',
+                'items' => 'invalid',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('purchases', 0);
+    }
 }
