@@ -19,7 +19,7 @@ not implemented; Pending business validation = cannot be used as official accoun
    rejection, Docker development setup, isolated MySQL/SQLite runner, formatting.
 2. Catalog import and valuation foundations — Implemented / Verified, commit f134390, PR #24.
 3. Jakarta date ranges and sales/purchase/product reports — Proposed.
-4. Partial returns, manual refunds, reversible cost snapshots — Proposed.
+4. Partial returns, manual refunds, reversible cost snapshots — Implemented / Verified, fd9e1b0, PR #25.
 5. Provisional margin, HPP and operating expenses — Proposed.
 6. Statistical safety stock, ROP, maximum stock — Proposed.
 7. Release regression, concurrency, security and operational review — Proposed.
