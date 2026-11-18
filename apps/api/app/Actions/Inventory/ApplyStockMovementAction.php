@@ -25,7 +25,8 @@ class ApplyStockMovementAction
         ?int $actorUserId = null,
         ?int $terminalId = null,
         ?string $reason = null,
-        mixed $occurredAt = null
+        mixed $occurredAt = null,
+        ?string $incomingValue = null
     ): StockMovement {
         return DB::transaction(
             function () use (
@@ -40,7 +41,8 @@ class ApplyStockMovementAction
                 $actorUserId,
                 $terminalId,
                 $reason,
-                $occurredAt
+                $occurredAt,
+                $incomingValue
             ) {
                 Product::query()
                     ->lockForUpdate()
@@ -112,7 +114,7 @@ class ApplyStockMovementAction
                     'quantity_base' => $quantityAfterFormatted,
                 ]);
 
-                return StockMovement::create([
+                $movement = StockMovement::create([
                     'product_id' => $productId,
 
                     'product_unit_id' => $productUnitId,
@@ -141,6 +143,9 @@ class ApplyStockMovementAction
 
                     'occurred_at' => $occurredAt ?? now(),
                 ]);
+                app(RecordInventoryValuation::class)->execute($movement, $incomingValue);
+
+                return $movement;
             },
             3
         );

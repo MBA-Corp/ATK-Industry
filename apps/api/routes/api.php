@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CatalogImportController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\InventoryController;
@@ -27,6 +28,8 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum', EnsureActiveUser::class])->group(function () {
+        Route::post('/catalog-imports/preview', [CatalogImportController::class, 'preview'])->middleware('permission:catalog.import');
+        Route::post('/catalog-imports/commit', [CatalogImportController::class, 'commit'])->middleware('permission:catalog.import');
         Route::get(
             '/purchases/{purchaseId}/invoice',
             [PurchaseInvoiceController::class, 'show']
