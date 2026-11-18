@@ -19,3 +19,6 @@ do not reinstall it or install host PHP as routine bootstrap.
 - Feature branches and PRs are authorized; production deployment is not. Do not merge
   while deployment automation or business approval remains unresolved.
 - Maintain docs/backend-roadmap.md and the existing docs/architecture API contracts.
+
+- Read docs/CODEX-HANDOFF.md before resuming. Update it after every milestone and
+  before stopping; include exact Git identity, tests, WIP, migrations and next commands.

@@ -10,14 +10,14 @@ not implemented; Pending business validation = cannot be used as official accoun
   adjustments, checkout/payments, cancellation, receipts, invoice and company profile.
 - No CR-01–08 complete implementation found. No original XLSX/PDF found in repository
   or current Codex workspace. Use synthetic fixtures only.
-- Upstream account access is read-only. Fork PR workflow; never push main.
-- No GitHub Actions workflows listed. Webhook/admin deployment visibility unavailable;
+- Account thallasff verified with push/admin access; use origin feature branches, never push main.
+- No GitHub Actions workflows, webhook or deployment records listed;
   external auto-deployment remains unknown. Merge/deployment requires resolution.
 
 ## Milestones
 1. Foundation hardening — Implemented / Verified: dependency security patches, inactive-session
    rejection, Docker development setup, isolated MySQL/SQLite runner, formatting.
-2. Catalog import and valuation foundations — Proposed.
+2. Catalog import and valuation foundations — Implemented partially, focused SQLite tests pass; full verification pending.
 3. Jakarta date ranges and sales/purchase/product reports — Proposed.
 4. Partial returns, manual refunds, reversible cost snapshots — Proposed.
 5. Provisional margin, HPP and operating expenses — Proposed.
