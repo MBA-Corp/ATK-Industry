@@ -92,17 +92,17 @@ class InventoryController extends Controller
             )->resolve(),
 
             'meta' => [
-            'current_page' => $products
-                ->currentPage(),
+                'current_page' => $products
+                    ->currentPage(),
 
-            'per_page' => $products
-                ->perPage(),
+                'per_page' => $products
+                    ->perPage(),
 
-            'total' => $products
-                ->total(),
+                'total' => $products
+                    ->total(),
 
-            'last_page' => $products
-                ->lastPage(),
+                'last_page' => $products
+                    ->lastPage(),
             ],
         ]);
     }
@@ -222,17 +222,17 @@ class InventoryController extends Controller
             )->resolve(),
 
             'meta' => [
-            'current_page' => $movements
-                ->currentPage(),
+                'current_page' => $movements
+                    ->currentPage(),
 
-            'per_page' => $movements
-                ->perPage(),
+                'per_page' => $movements
+                    ->perPage(),
 
-            'total' => $movements
-                ->total(),
+                'total' => $movements
+                    ->total(),
 
-            'last_page' => $movements
-                ->lastPage(),
+                'last_page' => $movements
+                    ->lastPage(),
             ],
         ]);
     }
