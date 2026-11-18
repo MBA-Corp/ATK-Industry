@@ -17,7 +17,7 @@ not implemented; Pending business validation = cannot be used as official accoun
 ## Milestones
 1. Foundation hardening — Implemented / Verified: dependency security patches, inactive-session
    rejection, Docker development setup, isolated MySQL/SQLite runner, formatting.
-2. Catalog import and valuation foundations — Implemented partially, focused SQLite tests pass; full verification pending.
+2. Catalog import and valuation foundations — Implemented / Verified, commit f134390, PR #24.
 3. Jakarta date ranges and sales/purchase/product reports — Proposed.
 4. Partial returns, manual refunds, reversible cost snapshots — Proposed.
 5. Provisional margin, HPP and operating expenses — Proposed.
@@ -45,3 +45,6 @@ Production readiness also requires backup/restore rehearsal, monitoring and UAT.
 SQLite: 288 tests / 975 assertions PASS. MySQL: 288 tests / 975 assertions PASS.
 Pint: 181 files PASS after import formatting. Platform checks PASS. Composer audit: zero advisories.
 Production deployment and accounting approval remain pending; this is not a production-readiness claim.
+
+## Data milestone verification
+SQLite: 299 passed, one MySQL-only test skipped, 1007 assertions. MySQL: 300 passed, 1012 assertions including concurrent stock withdrawal. Pint: 192 files PASS. Platform/audit PASS. Two additive migrations verified locally (33 total). See CODEX-HANDOFF.md for resumption and remaining scope.
