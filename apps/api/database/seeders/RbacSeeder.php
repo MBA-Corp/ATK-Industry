@@ -40,6 +40,8 @@ class RbacSeeder extends Seeder
         }
 
         $permissions = [
+            ['name' => 'Return Sale', 'code' => 'sale.return'],
+            ['name' => 'Record Refund', 'code' => 'refund.record'],
             ['name' => 'Import Catalog', 'code' => 'catalog.import'],
             [
                 'name' => 'Create Category',

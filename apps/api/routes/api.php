@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\ProductSupplierController;
 use App\Http\Controllers\Api\V1\PurchaseController;
 use App\Http\Controllers\Api\V1\PurchaseInvoiceController;
 use App\Http\Controllers\Api\V1\SaleController;
+use App\Http\Controllers\Api\V1\SaleReturnController;
 use App\Http\Controllers\Api\V1\StockAdjustmentController;
 use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\TerminalController;
@@ -28,6 +29,9 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum', EnsureActiveUser::class])->group(function () {
+        Route::post('/sales/{saleId}/returns', [SaleReturnController::class, 'store'])->middleware('permission:sale.return');
+        Route::get('/sale-returns/{returnId}', [SaleReturnController::class, 'show'])->middleware('permission:sale.return');
+        Route::post('/sale-returns/{returnId}/refund', [SaleReturnController::class, 'refund'])->middleware('permission:refund.record');
         Route::post('/catalog-imports/preview', [CatalogImportController::class, 'preview'])->middleware('permission:catalog.import');
         Route::post('/catalog-imports/commit', [CatalogImportController::class, 'commit'])->middleware('permission:catalog.import');
         Route::get(

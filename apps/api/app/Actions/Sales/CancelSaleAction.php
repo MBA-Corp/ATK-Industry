@@ -49,6 +49,9 @@ class CancelSaleAction
                     ]);
                 }
 
+                if (DB::table('sale_returns')->where('sale_id', $saleId)->exists()) {
+                    throw ValidationException::withMessages(['sale' => 'A sale with returns cannot be fully cancelled.']);
+                }
                 $cancelledAt = now();
 
                 $cancellation = $sale

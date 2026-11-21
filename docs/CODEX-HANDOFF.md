@@ -5,10 +5,10 @@ Docker. Continue existing implementation; do not restart the original audit.
 
 ## Repository / GitHub
 - Path C:\Projects\ATK-Industry\ATK-Industry, backend apps/api.
-- Branch feat/backend-data-finance.
-- Implementation HEAD f134390093bb7520d5192e304ee38d1cfefb4938, pushed to origin.
+- Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.
+- Implementation HEAD fd9e1b0a4216ee72fe6ebb7dfc810b40f9f73cfe, pushed to origin.
   A subsequent handoff-only commit may be HEAD; git log is authoritative.
-- Working tree at implementation checkpoint: clean; this handoff/roadmap update only.
+- Working tree at milestone: implementation committed and pushed; this handoff update only.
 - origin https://github.com/MBA-Corp/ATK-Industry.git (HTTPS).
 - fork https://github.com/Lloyd-29/ATK-Industry.git retained historically; do NOT use
   for new work. No historical authors rewritten.
@@ -60,9 +60,23 @@ invalidates blended cost; zero stock clears residual value. Ledger is processing
 not retrospective revaluation based on backdated occurred_at.
 Policy moving_average_excluding_freight_provisional is NOT official accounting.
 
+### Returns/refund PASS — fd9e1b0
+PR #25 OPEN: https://github.com/MBA-Corp/ATK-Industry/pull/25, stacked on PR #24 branch.
+ReturnSaleAction, RecordManualRefundAction, SaleReturnController, StoreSaleReturnRequest;
+new 2026_11_18_120000_create_sales_returns migration creates sale_returns,
+sale_return_items and sale_refunds. Original sales/payments immutable. Sale/item locks,
+cumulative refund/base/cost allocation, damaged-vs-resellable treatment, no full
+cancellation after returns. Manual refunds have evidence and MANUALLY_RECORDED status,
+never a claim of external payout verification. RbacSeeder adds sale.return/refund.record.
+Tests: SaleReturnTest, MySqlReturnConcurrencyTest, RetailFixture, return-worker.php.
+Contract: docs/architecture/sales-returns.md.
+Full SQLite: 304 passed, 3 MySQL-only skipped, 1036 assertions.
+Full MySQL: 307 passed, 1047 assertions. Pint 201 files/platform PASS.
+Local migration upgrade PASS (34 total), health HTTP 200.
+
 ## Database / migrations
 Development: atk_industry_dev on Compose mysql, persistent mysql_data volume.
-33 migrations applied, including:
+34 migrations applied, including:
 - 2026_11_18_100000_add_inventory_valuation_foundation:
   inventory_costs, inventory_valuations, nullable sale_items.cost_total DECIMAL(30,6).
 - 2026_11_18_110000_create_catalog_imports:
@@ -122,10 +136,10 @@ full vendor/bin/pint --test.
   rehearsal, monitoring, load/concurrency review and UAT. Green tests are not enough.
 
 ## Next work, in order
-1. Partial/full sales returns separate from full cancellation. Sale/line locks,
+1. DONE in fd9e1b0: Partial/full sales returns separate from full cancellation. Sale/line locks,
    cumulative quantity/value allocation, idempotent request, damaged vs resellable,
    audited stock restock. Block full cancellation after any return.
-2. Separate manual refund records/status/evidence; never imply gateway payment success.
+2. DONE in fd9e1b0: Separate manual refund records/status/evidence; never imply gateway payment success.
    Optional exchange references a replacement sale, not hidden netting.
 3. Reports: Jakarta day boundaries [start, next-day start), daily SKU/base-unit
    quantity, original-unit detail, transaction vs line counts, cancellation/return
@@ -146,3 +160,5 @@ MySQL, Pint, migration/contract verification, reviewed diff, commit/push/PR.
 Update this file with exact SHA/results and WIP before stopping. Preserve unfinished
 changes, never push failed code as verified, never commit secrets/client source files.
 User authorized backend engineering/feature branches/PRs, not frontend or production.
+
+Next implementation starts at item 3 (reporting), then finance/planning. Do not recreate returns/refunds. The return migration is already applied locally. Continue maintaining exact checkpoint results.
