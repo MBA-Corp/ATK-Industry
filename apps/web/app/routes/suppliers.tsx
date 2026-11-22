@@ -7,7 +7,6 @@ import {
   Pencil,
   Plus,
   Search,
-  Truck,
   UserCheck,
   Wallet,
   X,
@@ -103,11 +102,9 @@ export default function Suppliers() {
     <div className="suppliers-page">
       <section className="suppliers-heading">
         <div>
-          <p className="suppliers-eyebrow">MITRA & PASOKAN</p>
-          <h1>
-            Supplier<span>.</span>
-          </h1>
-          <p>Semua mitra pemasok, terhubung dalam satu tempat.</p>
+          <p className="suppliers-eyebrow">MITRA PEMASOK</p>
+          <h1>Supplier</h1>
+          <p>Kelola direktori pemasok barang, kontak penanggung jawab, dan termin pembayaran.</p>
         </div>
         <button
           className="supplier-button primary"
@@ -129,7 +126,7 @@ export default function Suppliers() {
           {
             label: "Supplier aktif",
             value: activeCount,
-            caption: "Siap menerima pesanan",
+            caption: "Siap menerima pesanan PO",
             icon: UserCheck,
             tone: "green",
           },
@@ -138,14 +135,14 @@ export default function Suppliers() {
             value: new Set(
               suppliers.map((item) => item.city.toLocaleLowerCase("id-ID")),
             ).size,
-            caption: "Jangkauan mitra pemasok",
+            caption: "Cakupan wilayah distribusi",
             icon: MapPin,
             tone: "violet",
           },
           {
             label: "Pembayaran tempo",
             value: suppliers.filter((item) => item.terms !== "Tunai").length,
-            caption: "Supplier dengan fasilitas tempo",
+            caption: "Termin 14 hingga 30 hari",
             icon: Wallet,
             tone: "amber",
           },
@@ -163,19 +160,17 @@ export default function Suppliers() {
         ))}
       </section>
       <p className="supplier-demo">
-        <span>
-          <i />
-          Data contoh
-        </span>
-        Perubahan hanya tersimpan selama halaman ini terbuka.
+        Perubahan pada direktori contoh tersimpan selama halaman ini terbuka. Klik nama supplier untuk melihat alamat lengkap dan catatan.
       </p>
       <section className="supplier-panel" aria-labelledby="supplier-list-title">
         <div className="supplier-panel-heading">
           <div>
             <h2 id="supplier-list-title">Daftar supplier</h2>
-            <p>Temukan kontak, kategori pasokan, dan informasi mitra Anda.</p>
+            <p>Pilih nama supplier untuk melihat detail kontak atau klik tombol edit di sisi kanan.</p>
           </div>
-          <span className="supplier-count">{suppliers.length} supplier</span>
+          <span className="supplier-count" role="status">
+            {filtered.length} supplier
+          </span>
         </div>
         <div className="supplier-toolbar">
           <label className="supplier-search workspace-search">
@@ -183,7 +178,7 @@ export default function Suppliers() {
             <input
               type="search"
               aria-label="Cari supplier"
-              placeholder="Cari nama, kontak, atau kota supplier..."
+              placeholder="Cari nama, kontak, atau kota supplier…"
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
@@ -224,6 +219,7 @@ export default function Suppliers() {
           ].map((item) => (
             <button
               key={item.value}
+              type="button"
               aria-pressed={status === item.value}
               className={status === item.value ? "selected" : ""}
               onClick={() => {
@@ -236,7 +232,12 @@ export default function Suppliers() {
             </button>
           ))}
         </div>
-        <div className="supplier-table-wrap">
+        <div
+          className="supplier-table-wrap"
+          role="region"
+          aria-label="Tabel direktori supplier"
+          tabIndex={0}
+        >
           <table className="supplier-table">
             <thead>
               <tr>
@@ -251,19 +252,18 @@ export default function Suppliers() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((item, index) => (
+              {rows.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <button
+                      type="button"
                       className="supplier-name"
+                      aria-label={`Detail ${item.name}`}
                       onClick={() => {
                         setSelected(item);
                         detail.current?.showModal();
                       }}
                     >
-                      <span className={`supplier-avatar tone-${index % 3}`}>
-                        <Building2 size={19} />
-                      </span>
                       <span>
                         <strong>{item.name}</strong>
                         <small>
@@ -274,7 +274,9 @@ export default function Suppliers() {
                   </td>
                   <td>
                     <strong>{item.contact}</strong>
-                    <small>{item.phone}</small>
+                    <small>
+                      {item.phone} · {item.email}
+                    </small>
                   </td>
                   <td>
                     <span className="supplier-category">{item.category}</span>
@@ -290,11 +292,12 @@ export default function Suppliers() {
                   </td>
                   <td>
                     <button
+                      type="button"
                       className="supplier-icon-button"
                       aria-label={`Edit ${item.name}`}
                       onClick={() => openForm(item)}
                     >
-                      <Pencil size={14} />
+                      <Pencil size={15} />
                     </button>
                   </td>
                 </tr>
@@ -335,25 +338,21 @@ export default function Suppliers() {
               disabled={currentPage === 1}
               onClick={() => setPage(currentPage - 1)}
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={16} />
             </button>
             <span>
-              Halaman {currentPage} dari {pages}
+              Halaman <strong>{currentPage}</strong> dari {pages}
             </span>
             <button
               aria-label="Halaman berikutnya"
               disabled={currentPage === pages}
               onClick={() => setPage(currentPage + 1)}
             >
-              <ChevronRight size={15} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </footer>
       </section>
-      <p className="supplier-footnote">
-        <Truck size={14} />
-        Kelola informasi pemasok untuk memudahkan proses pembelian.
-      </p>
       <dialog
         ref={dialog}
         className="supplier-dialog"
@@ -362,7 +361,7 @@ export default function Suppliers() {
         <form key={formVersion} onSubmit={save}>
           <header>
             <div>
-              <p>DIREKTORI SUPPLIER</p>
+              <p>FORMULIR PEMASOK</p>
               <h2 id="supplier-form-title">
                 {editing ? "Edit supplier" : "Tambah supplier"}
               </h2>
@@ -512,6 +511,7 @@ export default function Suppliers() {
                 <h2 id="supplier-detail-title">{selected.name}</h2>
               </div>
               <button
+                type="button"
                 aria-label="Tutup detail"
                 onClick={() => detail.current?.close()}
               >
@@ -527,28 +527,34 @@ export default function Suppliers() {
             <dl className="supplier-details">
               {[
                 ["Penanggung jawab", selected.contact],
-                ["Telepon", selected.phone],
-                ["Email", selected.email],
+                [
+                  "Telepon",
+                  selected.phone,
+                  `tel:${selected.phone.replace(/[^+\d]/g, "")}`,
+                ],
+                ["Email", selected.email, `mailto:${selected.email}`],
                 ["Kota", selected.city],
                 ["Kategori", selected.category],
                 ["Pembayaran", selected.terms],
                 ["Alamat", selected.address],
                 ["Catatan", selected.note || "Belum ada catatan."],
-              ].map(([label, value]) => (
+              ].map(([label, value, href]) => (
                 <div key={label}>
                   <dt>{label}</dt>
-                  <dd>{value}</dd>
+                  <dd>{href && value ? <a href={href}>{value}</a> : value}</dd>
                 </div>
               ))}
             </dl>
             <footer>
               <button
+                type="button"
                 className="supplier-button secondary"
                 onClick={() => detail.current?.close()}
               >
                 Tutup
               </button>
               <button
+                type="button"
                 className="supplier-button primary"
                 onClick={() => openForm(selected)}
               >

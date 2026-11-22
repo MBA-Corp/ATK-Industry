@@ -159,12 +159,120 @@ export const inventoryStockMovements = [
 
 export type InventoryMovement = (typeof inventoryStockMovements)[number];
 export type InventoryDirection = "in" | "out";
-export type InventoryPeriod = "week" | "month";
+export type InventoryPeriod = "week" | "month" | "custom";
+
+export type ReceiptProofLine = {
+  name: string;
+  qty: number;
+  unitPrice: number;
+};
+
+export type CustomerRefund = {
+  id: string;
+  receiptNo: string;
+  receiptDate: string;
+  receiptTime: string;
+  refundDate: string;
+  refundTime: string;
+  customerName: string;
+  cashier: string;
+  paymentMethod: "Tunai" | "QRIS";
+  sku: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+  refundAmount: number;
+  reason: string;
+  stockHandling: "Kembali ke stok aktif" | "Karantina barang rusak";
+  receiptCode: string;
+  receiptLines: ReceiptProofLine[];
+};
+
+export const initialCustomerRefunds: CustomerRefund[] = [
+  {
+    id: "RFD-261001-01",
+    receiptNo: "TRX-261001-015",
+    receiptDate: "2026-10-01",
+    receiptTime: "14:32",
+    refundDate: "2026-10-01",
+    refundTime: "16:05",
+    customerName: "Bpk. Hendra Wijaya",
+    cashier: "Dina",
+    paymentMethod: "QRIS",
+    sku: "PLP-G05",
+    productName: "Pulpen gel hitam 0.5",
+    quantity: 2,
+    unit: "PCS",
+    refundAmount: 8000,
+    reason: "Tinta macet saat dicoba setelah transaksi (struk asli terlampir)",
+    stockHandling: "Karantina barang rusak",
+    receiptCode: "STRUK-POS-015-994A",
+    receiptLines: [
+      { name: "Pulpen gel hitam 0.5", qty: 4, unitPrice: 4000 },
+      { name: "Buku tulis 58 lembar", qty: 5, unitPrice: 4500 },
+      { name: "Buku tulis 38 lembar", qty: 3, unitPrice: 3000 },
+    ],
+  },
+  {
+    id: "RFD-260930-02",
+    receiptNo: "TRX-260930-011",
+    receiptDate: "2026-09-30",
+    receiptTime: "13:12",
+    refundDate: "2026-09-30",
+    refundTime: "15:40",
+    customerName: "Ibu Siska Pratama",
+    cashier: "Dina",
+    paymentMethod: "QRIS",
+    sku: "PST-001",
+    productName: "Pensil warna 12 warna",
+    quantity: 1,
+    unit: "SET",
+    refundAmount: 25000,
+    reason: "Salah beli varian, kemasan masih tersegel utuh",
+    stockHandling: "Kembali ke stok aktif",
+    receiptCode: "STRUK-POS-011-782B",
+    receiptLines: [
+      { name: "Pensil warna 12 warna", qty: 1, unitPrice: 25000 },
+      { name: "Buku tulis 38 lembar", qty: 10, unitPrice: 3000 },
+      { name: "Pulpen ballpoint hitam", qty: 5, unitPrice: 2500 },
+    ],
+  },
+  {
+    id: "RFD-260928-01",
+    receiptNo: "TRX-260928-009",
+    receiptDate: "2026-09-28",
+    receiptTime: "10:15",
+    refundDate: "2026-09-28",
+    refundTime: "13:20",
+    customerName: "Sdri. Nadia Putri",
+    cashier: "Rizky",
+    paymentMethod: "Tunai",
+    sku: "SPL-002",
+    productName: "Spidol permanen hitam",
+    quantity: 1,
+    unit: "PCS",
+    refundAmount: 7000,
+    reason: "Ujung spidol kering dari pabrik",
+    stockHandling: "Karantina barang rusak",
+    receiptCode: "STRUK-POS-009-441C",
+    receiptLines: [
+      { name: "Spidol permanen hitam", qty: 2, unitPrice: 7000 },
+      { name: "Lem kertas putih 40 g", qty: 2, unitPrice: 5500 },
+    ],
+  },
+];
 
 export function isMovementInPeriod(
-  movement: InventoryMovement,
+  movement: { date: string },
   period: InventoryPeriod,
+  customStart = "2026-09-01",
+  customEnd = "2026-10-01",
 ): boolean {
+  if (period === "custom") {
+    const start = customStart <= customEnd ? customStart : customEnd;
+    const end = customStart <= customEnd ? customEnd : customStart;
+    return movement.date >= start && movement.date <= end;
+  }
   return period === "week"
     ? movement.date >= "2026-09-25" && movement.date <= "2026-10-01"
     : movement.date >= "2026-09-01" && movement.date <= "2026-09-30";
@@ -173,6 +281,7 @@ export function isMovementInPeriod(
 export const inventoryPeriodLabels = {
   week: "25 Sep - 1 Okt 2026",
   month: "September 2026",
+  custom: "Rentang khusus",
 } as const;
 
 const movementDateFormatter = new Intl.DateTimeFormat("id-ID", {

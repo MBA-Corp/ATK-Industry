@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
+  Printer,
   Search,
   SlidersHorizontal,
   X,
@@ -17,15 +18,21 @@ import { LoadingScreen } from "~/components/loading-screen";
 import { SelectMenu } from "~/components/select-menu";
 import { useProductsQuery } from "~/features/products/product.queries";
 import {
+  isOverMaxStock,
   lowStockThreshold,
+  productMaxStock,
   stockStatus,
 } from "~/features/products/product-stock";
 import type { Product } from "~/features/products/product.types";
 import "~/features/products/product.css";
 
-type StatusFilter = "all" | "active" | "low" | "out" | "inactive";
+type StatusFilter = "all" | "active" | "low" | "out" | "over" | "inactive";
 type SortOption =
-  "name-asc" | "name-desc" | "stock-asc" | "price-asc" | "price-desc";
+  | "name-asc"
+  | "name-desc"
+  | "stock-asc"
+  | "price-asc"
+  | "price-desc";
 const pageSize = 8;
 const noProducts: Product[] = [];
 const currency = new Intl.NumberFormat("id-ID", {
@@ -77,12 +84,14 @@ export default function Products() {
       const matchesCategory =
         category === "all" || product.category === category;
       const active = product.is_active !== false;
+      const maxStock = productMaxStock(product);
       const matchesStatus =
         status === "all" ||
         (status === "active" && active) ||
         (status === "inactive" && !active) ||
         (status === "out" && active && stockStatus(product.stock) === "out") ||
-        (status === "low" && active && stockStatus(product.stock) === "low");
+        (status === "low" && active && stockStatus(product.stock) === "low") ||
+        (status === "over" && active && isOverMaxStock(product.stock, maxStock));
       return matchesSearch && matchesCategory && matchesStatus;
     });
     return found.sort((a, b) => {
@@ -113,6 +122,18 @@ export default function Products() {
     (product) =>
       stockStatus(product.stock) === "low" && product.is_active !== false,
   ).length;
+  const outStockCount = products.filter(
+    (product) =>
+      stockStatus(product.stock) === "out" && product.is_active !== false,
+  ).length;
+  const overStockCount = products.filter(
+    (product) =>
+      product.is_active !== false &&
+      isOverMaxStock(product.stock, productMaxStock(product)),
+  ).length;
+  const inactiveCount = products.filter(
+    (product) => product.is_active === false,
+  ).length;
   const empty = !query.isPending && !query.isError && filtered.length === 0;
 
   return (
@@ -135,6 +156,7 @@ export default function Products() {
               inactive: "Nonaktif",
               low: "Stok menipis",
               out: "Stok habis",
+              over: "Melebihi batas maks.",
             }[status]
           }{" "}
           · Pencarian: {search || "—"}
@@ -146,7 +168,8 @@ export default function Products() {
               <th>SKU / Barcode</th>
               <th>Nama produk</th>
               <th>Kategori</th>
-              <th>Stok</th>
+              <th>Stok / Batas Maks.</th>
+              <th>Harga modal</th>
               <th>Harga jual</th>
               <th>Status</th>
             </tr>
@@ -167,7 +190,11 @@ export default function Products() {
                 </td>
                 <td>{product.category || "—"}</td>
                 <td className="print-number">
-                  {product.stock} {product.unit || "unit"}
+                  {product.stock} / {productMaxStock(product)}{" "}
+                  {product.unit || "unit"}
+                </td>
+                <td className="print-number">
+                  {currency.format(product.cost_price)}
                 </td>
                 <td className="print-number">
                   {currency.format(product.selling_price)}
@@ -177,76 +204,74 @@ export default function Products() {
             ))}
             {!filtered.length && (
               <tr>
-                <td colSpan={7}>Tidak ada produk sesuai filter.</td>
+                <td colSpan={8}>Tidak ada produk sesuai filter.</td>
               </tr>
             )}
           </tbody>
         </table>
       </section>
+
       <section className="products-heading">
         <div>
-          <p className="products-eyebrow">KATALOG & PERSEDIAAN</p>
-          <h1>
-            Produk <span>.</span>
-          </h1>
-          <p>Kelola katalog produk dan pantau ketersediaan barang di toko.</p>
+          <p className="products-eyebrow">MANAJEMEN KATALOG</p>
+          <h1>Katalog produk</h1>
+          <p>
+            Pantau daftar SKU, barcode, batas maksimum stok, harga modal, dan harga jual.
+          </p>
         </div>
         <div className="products-heading-actions">
-          <span className="product-data-badge">
-            <span />
-            Data contoh
-          </span>
           <button
             type="button"
             className="products-secondary-action"
             disabled={query.isPending || query.isError || filtered.length === 0}
             onClick={() => window.print()}
           >
-            <ArrowDownToLine size={16} />
+            <Printer size={15} aria-hidden="true" />
             Cetak daftar
           </button>
         </div>
       </section>
+
       <section className="product-summary" aria-label="Ringkasan produk">
         <article>
           <span className="product-summary-icon blue">
-            <Package size={19} />
+            <Package size={18} />
           </span>
           <div>
             <span>Seluruh produk</span>
             <strong>
               {query.isPending || query.isError ? "\u2014" : products.length}
             </strong>
-            <small>item di katalog</small>
+            <small>{categories.length} kategori produk</small>
           </div>
         </article>
         <article>
           <span className="product-summary-icon green">
-            <Boxes size={19} />
+            <Boxes size={18} />
           </span>
           <div>
             <span>Produk aktif</span>
             <strong>
               {query.isPending || query.isError ? "\u2014" : activeCount}
             </strong>
-            <small>tersedia di katalog</small>
+            <small>Siap dijual di kasir</small>
           </div>
         </article>
         <article>
           <span className="product-summary-icon orange">
-            <ArrowDownToLine size={19} />
+            <ArrowDownToLine size={18} />
           </span>
           <div>
             <span>Stok menipis</span>
             <strong>
               {query.isPending || query.isError ? "\u2014" : lowStockCount}
             </strong>
-            <small>produk aktif · ≤ {lowStockThreshold} unit</small>
+            <small>Min. 1–{lowStockThreshold} unit · {overStockCount} lewat maks.</small>
           </div>
         </article>
         <article>
           <span className="product-summary-icon rose">
-            <Barcode size={19} />
+            <Barcode size={18} />
           </span>
           <div>
             <span>Barcode terdaftar</span>
@@ -255,21 +280,26 @@ export default function Products() {
                 ? "\u2014"
                 : products.filter((product) => product.barcode).length}
             </strong>
-            <small>siap untuk pencarian</small>
+            <small>Siap pindai scanner POS</small>
           </div>
         </article>
       </section>
+
       <section className="product-catalog dashboard-panel" id="product-catalog">
         <div className="catalog-heading">
           <div>
             <h2>Daftar produk</h2>
-            <p>Temukan item berdasarkan nama, kode, kategori, atau barcode.</p>
+            <p>
+              Periksa stok aktual dibandingkan batas kapasitas maksimum per SKU.
+            </p>
           </div>
-          <span className="catalog-total">{filtered.length} produk</span>
+          <span className="catalog-total" role="status">
+            {query.isSuccess && `${filtered.length} produk`}
+          </span>
         </div>
         <div className="product-toolbar">
           <label className="product-search workspace-search">
-            <Search size={17} />
+            <Search size={15} />
             <span className="sr-only">Cari produk</span>
             <input
               value={search}
@@ -277,14 +307,13 @@ export default function Products() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Cari nama, SKU, atau barcode..."
+              placeholder="Cari nama, SKU, atau barcode…"
             />
-            <kbd>⌕</kbd>
           </label>
           <SelectMenu
             className="product-select"
             ariaLabel="Filter kategori"
-            icon={<SlidersHorizontal size={15} />}
+            icon={<SlidersHorizontal size={14} />}
             value={category}
             options={[
               { value: "all", label: "Semua kategori" },
@@ -298,7 +327,7 @@ export default function Products() {
           <SelectMenu
             className="product-select"
             ariaLabel="Urutkan produk"
-            icon={<ArrowUpDown size={15} />}
+            icon={<ArrowUpDown size={14} />}
             value={sort}
             options={[
               { value: "name-asc", label: "Nama A–Z" },
@@ -320,11 +349,12 @@ export default function Products() {
         >
           {(
             [
-              { value: "all", label: "Semua" },
-              { value: "active", label: "Aktif" },
-              { value: "low", label: "Stok menipis" },
-              { value: "out", label: "Stok habis" },
-              { value: "inactive", label: "Nonaktif" },
+              { value: "all", label: "Semua", count: products.length },
+              { value: "active", label: "Aktif", count: activeCount },
+              { value: "low", label: "Stok menipis", count: lowStockCount },
+              { value: "out", label: "Stok habis", count: outStockCount },
+              { value: "over", label: "Lewat batas maks.", count: overStockCount },
+              { value: "inactive", label: "Nonaktif", count: inactiveCount },
             ] as const
           ).map((item) => (
             <button
@@ -338,6 +368,9 @@ export default function Products() {
               }}
             >
               {item.label}
+              {query.isSuccess && (
+                <span className="tab-count">{item.count}</span>
+              )}
             </button>
           ))}
         </div>
@@ -375,16 +408,22 @@ export default function Products() {
         )}
         {!query.isPending && !query.isError && displayedProducts.length > 0 && (
           <>
-            <div className="product-table-scroll">
+            <div
+              className="product-table-scroll"
+              role="region"
+              aria-label="Tabel katalog produk"
+              tabIndex={0}
+            >
               <table className="products-table">
                 <thead>
                   <tr>
                     <th>PRODUK</th>
                     <th>KATEGORI</th>
                     <th>BARCODE</th>
-                    <th>STOK</th>
-                    <th>HARGA JUAL</th>
-                    <th>STATUS</th>
+                    <th>STOK / BATAS MAKS.</th>
+                    <th className="product-price">HARGA MODAL</th>
+                    <th className="product-price">HARGA JUAL</th>
+                    <th>STATUS JUAL</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -392,6 +431,8 @@ export default function Products() {
                     const active = product.is_active !== false;
                     const out = stockStatus(product.stock) === "out";
                     const low = stockStatus(product.stock) === "low";
+                    const maxStock = productMaxStock(product);
+                    const over = isOverMaxStock(product.stock, maxStock);
                     return (
                       <tr
                         key={product.id}
@@ -403,11 +444,6 @@ export default function Products() {
                       >
                         <td>
                           <div className="product-name-cell">
-                            <span
-                              className={`product-thumb tone-${product.id % 5}`}
-                            >
-                              <Package size={19} />
-                            </span>
                             <span>
                               <strong>{product.name}</strong>
                               <small>
@@ -425,17 +461,35 @@ export default function Products() {
                         </td>
                         <td>
                           <span className="product-barcode-cell">
-                            <Barcode size={15} />
+                            <Barcode size={14} />
                             {product.barcode || "—"}
                           </span>
                         </td>
                         <td>
-                          <span
-                            className={`product-stock ${out ? "out" : low ? "low" : ""}`}
-                          >
-                            <strong>{product.stock}</strong>
-                            <small>{product.unit || "unit"}</small>
-                          </span>
+                          <div className="product-stock-wrap">
+                            <span
+                              className={`product-stock ${out ? "out" : low ? "low" : ""}`}
+                            >
+                              <strong>{product.stock}</strong>
+                              <small>
+                                / {maxStock} {product.unit || "unit"}
+                              </small>
+                            </span>
+                            {(out || low || over) && (
+                              <span
+                                className={`product-stock-chip ${out ? "out" : low ? "low" : "over"}`}
+                              >
+                                {out
+                                  ? "Habis"
+                                  : low
+                                    ? "Menipis"
+                                    : "Melebihi maks."}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="product-price product-cost">
+                          {currency.format(product.cost_price)}
                         </td>
                         <td className="product-price">
                           {currency.format(product.selling_price)}
@@ -469,7 +523,7 @@ export default function Products() {
                   disabled={currentPage <= 1}
                   onClick={() => setPage(currentPage - 1)}
                 >
-                  <ChevronLeft size={17} />
+                  <ChevronLeft size={16} />
                 </button>
                 <span>
                   Halaman <strong>{currentPage}</strong> dari {totalPages}
@@ -479,15 +533,15 @@ export default function Products() {
                   disabled={currentPage >= totalPages}
                   onClick={() => setPage(currentPage + 1)}
                 >
-                  <ChevronRight size={17} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
           </>
         )}
         <p className="product-threshold-note">
-          Stok menipis: produk aktif dengan stok 1–{lowStockThreshold} unit.
-          Filter stok habis menampilkan produk aktif tanpa stok tersedia.
+          Stok menipis: 1–{lowStockThreshold} unit · Batas maksimum stok mencegah
+          kelebihan penumpukan barang di gudang (dapat disesuaikan di menu Persediaan).
         </p>
       </section>
       <p className="products-data-note">

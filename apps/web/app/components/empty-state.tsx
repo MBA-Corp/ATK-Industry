@@ -12,16 +12,16 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <div className="rounded-lg border border-dashed bg-card p-8 text-center text-card-foreground">
-      <h2 className="text-base font-semibold">{title}</h2>
+    <div className="mx-5 my-4 rounded-2xl border border-[#e6e6e6] bg-[#f7f7f5] p-8 text-center text-black">
+      <h2 className="text-base font-semibold tracking-tight text-black">{title}</h2>
 
       {description && (
-        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        <p className="mx-auto mt-2 max-w-md text-sm font-normal text-black">
           {description}
         </p>
       )}
 
-      {action && <div className="mt-4">{action}</div>}
+      {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
 }

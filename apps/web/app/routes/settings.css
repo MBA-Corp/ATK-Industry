@@ -1,0 +1,302 @@
+/* Editorial Store Settings CSS — Calibrated to 80%-zoom desktop density & spacious mobile */
+.store-settings {
+  display: grid;
+  gap: 18px;
+  color: #000000;
+}
+
+.store-settings-heading {
+  border-bottom: 1px solid #000000;
+  padding: 4px 0 16px;
+}
+
+.store-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #000000;
+  margin-bottom: 6px;
+}
+
+.store-settings h1 {
+  font-size: clamp(24px, 2.3vw, 34px);
+  font-weight: 480;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: #000000;
+}
+
+.store-settings-heading p:last-child {
+  font-size: 12.5px;
+  font-weight: 340;
+  color: #000000;
+  margin-top: 5px;
+}
+
+/* Signature Block Cream Story Section per DESIGN-figma.md */
+.store-preview-block {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: #f4ecd6;
+  color: #000000;
+}
+
+.store-preview-block h2 {
+  font-size: 19px;
+  font-weight: 540;
+  letter-spacing: -0.2px;
+  color: #000000;
+}
+
+.store-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: #000000;
+}
+
+.store-preview-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.store-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: 50px;
+  background: #ffffff;
+  border: 1px solid #000000;
+  color: #000000;
+}
+
+.store-status-card,
+.store-error-card {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid #e6e6e6;
+  background: #f7f7f5;
+  font-size: 12.5px;
+}
+
+.store-error-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #efd4d4;
+  border-color: #000000;
+}
+
+.store-secondary {
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 50px;
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 480;
+}
+
+.store-secondary:hover {
+  background: #000000;
+  color: #ffffff;
+}
+
+.store-settings form {
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.store-settings fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.store-settings form section {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr);
+  gap: 20px;
+  padding: 20px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.store-settings form h2 {
+  font-size: 16.5px;
+  font-weight: 540;
+  letter-spacing: -0.2px;
+  color: #000000;
+}
+
+.store-settings form p {
+  color: #000000;
+  font-size: 12px;
+  font-weight: 340;
+  margin-top: 4px;
+}
+
+.store-fields {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+}
+
+.store-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 540;
+  color: #000000;
+}
+
+.store-fields :is(input:not([type="checkbox"]):not([type="file"]), textarea) {
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 9px 12px;
+  width: 100%;
+  min-height: 38px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: #000000;
+  background: #ffffff;
+  transition: border-color 0.15s;
+}
+
+.store-fields :is(input:not([type="checkbox"]):not([type="file"]), textarea):hover {
+  border-color: #000000;
+}
+
+.store-fields input[type="file"] {
+  border: 1px dashed #000000;
+  border-radius: 10px;
+  padding: 8px 10px;
+  width: 100%;
+  min-height: 42px;
+  background: #f7f7f5;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.store-fields input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 14px;
+  border: 1px solid #000000;
+  border-radius: 50px;
+  background: #000000;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 480;
+  cursor: pointer;
+}
+
+.store-fields textarea {
+  resize: vertical;
+}
+
+.store-fields img {
+  object-fit: contain;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #f7f7f5;
+  padding: 6px;
+}
+
+.store-fields .store-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  font-weight: 480;
+}
+
+.store-settings footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: #f7f7f5;
+}
+
+.store-save {
+  border-radius: 50px;
+  min-height: 38px;
+  background: #000000;
+  border: 1px solid #000000;
+  color: #ffffff;
+  padding: 8px 18px;
+  font-size: 12.5px;
+  font-weight: 480;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.store-save:hover:not(:disabled) {
+  background: #1f1d3d;
+}
+
+.store-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.store-status-text {
+  font-size: 12px;
+  color: #000000;
+}
+
+.store-settings [role="alert"] {
+  color: #000000;
+  background: #efd4d4;
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 12px;
+}
+
+.store-settings :is(input, textarea, button):focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+@media (max-width: 820px) {
+  .store-settings {
+    gap: 20px;
+  }
+  .store-settings form section {
+    grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 14px;
+  }
+  .store-preview-block,
+  .store-settings footer {
+    padding: 18px;
+  }
+  .store-save {
+    width: 100%;
+    min-height: 42px;
+  }
+}
