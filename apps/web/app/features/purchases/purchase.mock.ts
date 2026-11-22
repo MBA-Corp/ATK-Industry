@@ -9,8 +9,11 @@ export type PurchaseLine = {
 };
 export type Purchase = {
   id: string;
+  invoiceNo: string;
   supplier: string;
   date: string;
+  recordedBy: string;
+  paymentTerms: string;
   status: PurchaseStatus;
   lines: PurchaseLine[];
   note: string;
@@ -39,14 +42,20 @@ const sampleStatuses: PurchaseStatus[] = [
   "Draf",
   "Diterima",
 ];
+const sampleCashiers = ["Kasir Rina", "Kasir Dimas", "Kasir Nisa"];
+const sampleTerms = ["Tempo 14 Hari", "Tunai", "Tempo 30 Hari"];
+
 export const initialPurchases: Purchase[] = sampleStatuses.map(
   (status, index) => ({
     id: `PO-2026-${String(48 - index).padStart(4, "0")}`,
+    invoiceNo: `FAK-SUP-${String(890 - index).padStart(4, "0")}`,
     supplier: suppliers[index % suppliers.length],
     date:
       index === 0
         ? "2026-10-01"
         : `2026-09-${String(31 - index).padStart(2, "0")}`,
+    recordedBy: sampleCashiers[index % sampleCashiers.length],
+    paymentTerms: sampleTerms[index % sampleTerms.length],
     status,
     lines: productMockData
       .slice(index % 3, (index % 3) + 2 + (index % 2))
@@ -57,6 +66,8 @@ export const initialPurchases: Purchase[] = sampleStatuses.map(
         price: product.cost_price ?? 0,
       })),
     note:
-      index === 0 ? "Mohon periksa kondisi kemasan saat barang diterima." : "",
+      index === 0
+        ? "Dicatat oleh kasir berdasarkan surat jalan pemasok. Kemasan telah diperiksa saat barang masuk."
+        : "Dokumen pesanan pembelian diinput melalui terminal operasional kasir.",
   }),
 );

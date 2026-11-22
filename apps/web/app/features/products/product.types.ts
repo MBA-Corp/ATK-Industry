@@ -7,6 +7,7 @@ export type Product = {
   name: string;
   category: string | null;
   stock: number;
+  max_stock?: number;
   unit: string | null;
   cost_price: number;
   selling_price: number;

@@ -14,10 +14,10 @@ export function ErrorState({
   isRetrying = false,
 }: ErrorStateProps) {
   return (
-    <div className="rounded-lg border border-destructive/30 bg-card p-6 text-card-foreground">
-      <h2 className="font-semibold">{title}</h2>
+    <div className="mx-5 my-4 rounded-2xl border border-black bg-[#efd4d4] p-6 text-black">
+      <h2 className="text-base font-semibold text-black">{title}</h2>
 
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-2 text-sm text-black">
         {description}
       </p>
 
@@ -26,11 +26,11 @@ export function ErrorState({
           type="button"
           variant="outline"
           size="sm"
-          className="mt-4"
+          className="mt-4 min-h-10 rounded-full border-black bg-white px-5 text-black hover:bg-black hover:text-white"
           onClick={onRetry}
           disabled={isRetrying}
         >
-          {isRetrying ? "Retrying..." : "Retry"}
+          {isRetrying ? "Memuat ulang..." : "Coba lagi"}
         </Button>
       )}
     </div>

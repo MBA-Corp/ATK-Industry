@@ -17,6 +17,9 @@ export default [
     route("pos", "routes/pos.tsx"),
     route("products", "routes/products.tsx"),
     route("inventory", "routes/inventory.tsx"),
+    route("inventory/movements", "routes/inventory.tsx", {
+      id: "routes/inventory-movements",
+    }),
     route("suppliers", "routes/suppliers.tsx"),
     route("purchases", "routes/purchases.tsx"),
     route("reports", "routes/reports.tsx"),

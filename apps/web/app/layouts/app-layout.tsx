@@ -119,9 +119,12 @@ export default function AppLayout() {
     "/dashboard",
     "/products",
     "/inventory",
+    "/inventory/movements",
     "/purchases",
     "/suppliers",
     "/reports",
+    "/users",
+    "/settings",
   ].includes(location.pathname) ? (
     <DashboardShell
       name={user.name}

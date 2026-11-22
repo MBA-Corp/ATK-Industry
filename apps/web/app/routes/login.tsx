@@ -3,16 +3,7 @@ import { useForm } from "react-hook-form";
 import { useToast } from "~/components/toast-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate } from "react-router";
-import {
-  ArrowRight,
-  ChartNoAxesCombined,
-  Eye,
-  EyeOff,
-  LoaderCircle,
-  LockKeyhole,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { z } from "zod";
 import {
   useCurrentUserQuery,
@@ -63,69 +54,31 @@ export default function Login() {
 
   return (
     <main className="login-page" lang="id">
-      <div className="login-card">
-        <section
-          className="login-welcome"
-          aria-label="Selamat datang di ATK Industry"
-        >
-          <div className="login-welcome-content">
-            <span className="login-overline">SELAMAT DATANG DI</span>
-            <div className="login-brand-icon">
-              <ChartNoAxesCombined size={38} strokeWidth={1.8} />
-            </div>
-            <div className="login-brand">
-              ATK<span>industry</span>
-            </div>
-            <h1>
-              Toko terkelola.
-              <br />
-              Bisnis bertumbuh.
-            </h1>
-            <p>
-              Satu tempat untuk memantau penjualan,
-              <br />
-              mengelola persediaan, dan menjalankan
-              <br />
-              keseharian toko Anda.
-            </p>
-          </div>
-          <div className="login-welcome-footer">
-            <ShieldCheck size={15} />
-            Ruang kerja khusus tim Anda
-          </div>
-          <svg
-            className="login-wave"
-            viewBox="0 0 90 600"
-            preserveAspectRatio="none"
-            aria-hidden="true"
+      <div className="login-container">
+        <div className="login-brand">
+          <span className="login-brand-mark" aria-hidden="true">
+            A
+          </span>
+          <span className="login-brand-word">
+            ATK<span className="login-brand-light">industry</span>
+          </span>
+        </div>
+
+        <section className="login-box" aria-labelledby="login-heading">
+          <header className="login-box-header">
+            <span className="login-eyebrow">AUTENTIKASI AKUN</span>
+            <h1 id="login-heading">Masuk ke dashboard</h1>
+            <p>Masukkan username dan password akun toko Anda.</p>
+          </header>
+
+          <form
+            className="login-form"
+            onSubmit={form.handleSubmit(submit)}
+            noValidate
           >
-            <path
-              fill="white"
-              opacity=".18"
-              d="M15 0 Q5 60 40 110 T32 220 T43 340 T24 460 T10 600 H90 V0Z"
-            />
-            <path
-              fill="white"
-              opacity=".3"
-              d="M35 0 Q20 60 55 110 T47 220 T58 340 T39 460 T25 600 H90 V0Z"
-            />
-            <path
-              fill="white"
-              d="M55 0 Q40 60 75 110 T67 220 T78 340 T59 460 T45 600 H90 V0Z"
-            />
-          </svg>
-        </section>
-        <section className="login-form-panel">
-          <div className="login-form-heading">
-            <span className="login-form-eyebrow">RETAIL WORKSPACE</span>
-            <h2>Masuk ke akun Anda</h2>
-            <p>Selamat datang kembali. Mari mulai hari ini.</p>
-          </div>
-          <form onSubmit={form.handleSubmit(submit)} noValidate>
             <div className="login-field">
               <label htmlFor="username">Username</label>
               <div className="login-input-wrap">
-                <UserRound size={17} />
                 <input
                   id="username"
                   autoComplete="username"
@@ -146,10 +99,10 @@ export default function Login() {
                 </p>
               )}
             </div>
+
             <div className="login-field">
               <label htmlFor="password">Password</label>
               <div className="login-input-wrap">
-                <LockKeyhole size={17} />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -169,10 +122,12 @@ export default function Login() {
                   className="login-reveal"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={
-                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                    showPassword
+                      ? "Sembunyikan password"
+                      : "Tampilkan password"
                   }
                 >
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {form.formState.errors.password && (
@@ -181,11 +136,13 @@ export default function Login() {
                 </p>
               )}
             </div>
+
             {form.formState.errors.root && (
               <p className="login-error login-error-banner" role="alert">
                 {form.formState.errors.root.message}
               </p>
             )}
+
             <button
               className="login-submit"
               type="submit"
@@ -193,26 +150,24 @@ export default function Login() {
             >
               {login.isPending ? (
                 <>
-                  <LoaderCircle className="login-spinner" size={17} />
+                  <LoaderCircle className="login-spinner" size={16} />
                   Sedang masuk...
                 </>
               ) : (
                 <>
-                  Masuk ke dashboard
-                  <ArrowRight size={17} />
+                  Masuk
+                  <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
-          <p className="login-help">
-            Butuh bantuan akses?
-            <br />
-            <span>Hubungi pengelola toko Anda.</span>
-          </p>
-          <p className="login-copyright">
-            © {new Date().getFullYear()} ATK Industry. All rights reserved.
-          </p>
         </section>
+
+        <footer className="login-footer">
+          <span>© {new Date().getFullYear()} ATK INDUSTRY</span>
+          <span>·</span>
+          <span>SISTEM MANAJEMEN TOKO</span>
+        </footer>
       </div>
     </main>
   );
