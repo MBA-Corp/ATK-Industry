@@ -953,6 +953,81 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
+  /api/v1/inventory/reorder-alerts:
+    get:
+      tags: [Inventory]
+      summary: Evaluate reorder, overstock, or insufficient-data alerts
+      description: Requires inventory.planning.view. An empty window may have a continuation.
+      security:
+        - sanctum: []
+      parameters:
+        - name: kind
+          in: query
+          schema: { type: string, enum: [reorder, overstock, insufficient_data], default: reorder }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - name: after_product_id
+          in: query
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Alert window with data and next_after_product_id
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/inventory/{productId}/planning:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    get:
+      tags: [Inventory]
+      summary: Get provisional inventory plan and daily demand
+      description: Requires inventory.planning.view.
+      security:
+        - sanctum: []
+      responses:
+        "200":
+          description: Inventory plan and provisional stock classification
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Active product not found
+    put:
+      tags: [Inventory]
+      summary: Replace a product's inventory planning policy
+      description: Requires inventory.planning.manage. Quantities use the active base unit.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [history_from, lead_time_days, demand_window_days, minimum_history_days, quantity_step, minimum_stock, maximum_stock]
+              properties:
+                history_from: { type: string, format: date }
+                lead_time_days: { type: integer, minimum: 1, maximum: 365 }
+                demand_window_days: { type: integer, minimum: 2, maximum: 366 }
+                minimum_history_days: { type: integer, minimum: 2, maximum: 366 }
+                quantity_step: { type: [string, number] }
+                minimum_stock: { type: [string, number, 'null'] }
+                maximum_stock: { type: [string, number, 'null'] }
+      responses:
+        "200":
+          description: Updated policy and calculated plan
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Active product not found
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
   /api/v1/expenses:
     post:
       tags: [Expenses]

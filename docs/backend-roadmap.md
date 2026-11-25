@@ -21,7 +21,7 @@ not implemented; Pending business validation = cannot be used as official accoun
 3. Daily sales reporting with Jakarta dates, SKU and unit grouping, CSV and RBAC — Implemented / Verified. Purchase reporting remains proposed.
 4. Partial returns, manual refunds, reversible cost snapshots — Implemented / Verified, fd9e1b0, PR #25.
 5. Provisional margin, periodic/perpetual HPP and audited operating expenses — Implemented / Verified. Explicit purchase freight, returns and discount source coverage and accounting approval remain pending.
-6. Statistical safety stock, ROP, maximum stock — Proposed.
+6. Provisional statistical safety stock, ROP, and soft overstock alerts — Implemented / Verified. Demand history and return treatment require business validation.
 7. Release regression, concurrency, security and operational review — Proposed.
 
 Dependencies: reports must reconcile returns; valuation hooks must cover all stock

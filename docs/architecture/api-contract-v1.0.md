@@ -778,3 +778,40 @@ existing expense and conflicting requests using the same UUID return 409.
 Edits require the current version and at least one editable field or void=true.
 A stale version returns 409. Voided expenses are excluded from period totals
 and retain their version history, actor and timestamp.
+
+## Provisional Inventory Planning
+
+| Request | Permission | Response |
+|---|---|---|
+| GET /api/v1/inventory/{productId}/planning | inventory.planning.view | Plan and daily history |
+| PUT /api/v1/inventory/{productId}/planning | inventory.planning.manage | Replaced policy and recalculated plan |
+| GET /api/v1/inventory/reorder-alerts | inventory.planning.view | Window of alerts for active products |
+
+Policy fields: history_from (confirmed complete history start, YYYY-MM-DD),
+lead_time_days (1–365), demand_window_days (2–366), minimum_history_days
+(2 through demand_window_days), quantity_step (positive), minimum_stock and
+maximum_stock (both present and nullable, with maximum at least minimum).
+Stock and step inputs use base units and up to six decimal places. An active
+base unit with conversion 1 is required to configure an active product.
+
+History starts on or after the first full recorded product day. The observation
+window ends yesterday in Asia/Jakarta and fills zero-sales days only from the
+confirmed start. Completed, uncancelled sales use original base quantities.
+Returns are reported separately from purchasing demand under the provisional
+policy. Backdated sales and later cancellations can recalculate historical days.
+
+The API uses population standard deviation and a fixed 95% service level
+(Z=1.645). It rounds each calculated threshold upward to quantity_step.
+At insufficient history, it uses the configured minimum if available and
+otherwise leaves ROP null. Threshold evaluation uses current on-hand stock.
+
+Zero stock is out_of_stock, positive stock at or below safety stock is critical,
+and stock at or below the effective reorder threshold is reorder_needed.
+The effective threshold is the higher of configured minimum and calculated ROP
+when both exist. An independent soft overstock flag is true above maximum.
+Stock operations remain available above that limit.
+
+Alerts accept kind=reorder (default), overstock or insufficient_data, plus
+per_page (1–100, default 25) and after_product_id. Follow next_after_product_id
+until null. Filtering occurs inside each product window, so an empty page
+can have a continuation. Alert rows omit daily observations.

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\FinancialReportController;
 use App\Http\Controllers\Api\V1\InventoryController;
+use App\Http\Controllers\Api\V1\InventoryPlanningController;
 use App\Http\Controllers\Api\V1\OperatingExpenseController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductSupplierController;
@@ -46,6 +47,9 @@ Route::prefix('v1')->group(function () {
         });
         Route::get('/reports/sales', [SalesReportController::class, 'index'])->middleware('permission:report.sales.view');
         Route::get('/reports/sales/export', [SalesReportController::class, 'export'])->middleware('permission:report.sales.view');
+        Route::get('/inventory/reorder-alerts', [InventoryPlanningController::class, 'alerts'])->middleware('permission:inventory.planning.view');
+        Route::get('/inventory/{productId}/planning', [InventoryPlanningController::class, 'show'])->whereNumber('productId')->middleware('permission:inventory.planning.view');
+        Route::put('/inventory/{productId}/planning', [InventoryPlanningController::class, 'update'])->whereNumber('productId')->middleware('permission:inventory.planning.manage');
         Route::post('/sales/{saleId}/returns', [SaleReturnController::class, 'store'])->middleware('permission:sale.return');
         Route::get('/sale-returns/{returnId}', [SaleReturnController::class, 'show'])->middleware('permission:sale.return');
         Route::post('/sale-returns/{returnId}/refund', [SaleReturnController::class, 'refund'])->middleware('permission:refund.record');
