@@ -30,10 +30,13 @@ Docker. Continue existing implementation; do not restart the original audit.
   adds a sales completion date index and ran in isolated test databases.
 - Cancellation restates the original day. Returns use effective date.
   PR #28 is open and stacked on #25.
-- Milestone B WIP on feat/backend-financial-reporting. Added provisional
-  cost snapshot margins/period calculations and audited expenses. Planned check:
-  focused financial endpoint tests, unclassified freight handling, historical
-  valuation cutoff, contract, then full SQLite/MySQL and publish.
+- Milestone B implementation 23966c4faa97f2faacc3f696bed21d16d562222b on feat/backend-financial-reporting
+  (base PR #28). SQLite 314 pass / 3 skip / 1141 assertions, MySQL 317 pass /
+  1152 assertions, Pint 216 files, platform requirements and locked audit pass.
+  Migration 2026_11_26_100000 adds expenses and immutable revisions.
+  Financial source limitations: unclassified freight, no recorded purchase
+  returns/discounts, no separately recorded sales discounts. Requires accounting
+  review. Next: inventory planning from verified full-day sales history.
 ## Repository / GitHub
 - Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.
