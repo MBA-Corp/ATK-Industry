@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CatalogImportController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\InventoryController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\TerminalController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Middleware\EnsureActiveUser;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -25,7 +27,9 @@ Route::prefix('v1')->group(function () {
         ]);
     });
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', EnsureActiveUser::class])->group(function () {
+        Route::post('/catalog-imports/preview', [CatalogImportController::class, 'preview'])->middleware('permission:catalog.import');
+        Route::post('/catalog-imports/commit', [CatalogImportController::class, 'commit'])->middleware('permission:catalog.import');
         Route::get(
             '/purchases/{purchaseId}/invoice',
             [PurchaseInvoiceController::class, 'show']

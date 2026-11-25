@@ -5,6 +5,7 @@ namespace App\Actions\Purchasing;
 use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Models\Purchase;
 use App\Support\DecimalMath;
+use App\Support\MoneyMath;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -161,7 +162,8 @@ class ReceivePurchaseAction
 
                             reason: 'Purchase receiving',
 
-                            occurredAt: $receivedAt
+                            occurredAt: $receivedAt,
+                            incomingValue: (string) MoneyMath::lineTotal((string) $actualQuantity, $purchaseItem->purchase_price)
                         );
                 }
 

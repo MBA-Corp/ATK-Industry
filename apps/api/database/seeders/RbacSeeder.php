@@ -40,6 +40,7 @@ class RbacSeeder extends Seeder
         }
 
         $permissions = [
+            ['name' => 'Import Catalog', 'code' => 'catalog.import'],
             [
                 'name' => 'Create Category',
                 'code' => 'category.create',

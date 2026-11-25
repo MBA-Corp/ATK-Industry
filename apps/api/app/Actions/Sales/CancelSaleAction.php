@@ -132,7 +132,8 @@ class CancelSaleAction
                             'reason'
                         ],
 
-                        occurredAt: $cancelledAt
+                        occurredAt: $cancelledAt,
+                        incomingValue: $item->cost_total === null ? null : (string) $item->cost_total
                     );
                 }
 

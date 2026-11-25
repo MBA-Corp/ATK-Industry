@@ -1,0 +1,54 @@
+name: atk-industry-dev
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: atk_industry_dev
+      MYSQL_USER: atk_app
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Missing MYSQL_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Missing MYSQL_ROOT_PASSWORD}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysql -h 127.0.0.1 -u root -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.dev
+    working_dir: /var/www/html
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./apps/api:/var/www/html
+      - api_vendor:/var/www/html/vendor
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: atk_industry_dev
+      DB_USERNAME: atk_app
+      DB_PASSWORD: "${MYSQL_PASSWORD:?Missing MYSQL_PASSWORD}"
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+      COMPOSER_ALLOW_SUPERUSER: "1"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -lc "composer install --no-interaction --prefer-dist --no-progress &&
+              php artisan serve --host=0.0.0.0 --port=8000"
+
+volumes:
+  mysql_data:
+  api_vendor:
