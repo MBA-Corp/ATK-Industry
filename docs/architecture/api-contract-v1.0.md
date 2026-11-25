@@ -734,3 +734,47 @@ Day groups omit quantities across products.
 CSV export is limited to 10,000 grouped rows per request. Narrow the date
 range or use filters if the endpoint returns 422 for the limit. The earlier
 summary/detail and PDF/XLSX paths in the specification remain proposals.
+
+## Provisional Financial Reporting
+
+| Method and path | Permission | Response |
+|---|---|---|
+| GET /api/v1/reports/profit-loss | report.profit.view | Period amounts with reconciliation status |
+| GET /api/v1/reports/profit-loss/export | report.profit.view | Single-row CSV for the same report |
+| GET /api/v1/reports/margins/products | report.profit.view | Paginated margin by product and historical SKU |
+| GET /api/v1/reports/margins/transactions | report.profit.view | Paginated margin by original sale ID |
+| POST /api/v1/expenses | expense.manage | Create or replay an expense |
+| GET /api/v1/expenses/{expenseId} | expense.manage | Current expense revision |
+| PATCH /api/v1/expenses/{expenseId} | expense.manage | Edit or void the expense |
+| GET /api/v1/expenses/{expenseId}/history | expense.manage | Paginated immutable revision history |
+
+Reports accept required date_from and date_to with the same inclusive Jakarta
+date rules as the sales report. Profit/loss accepts hpp_method=perpetual (default)
+or periodic. Margin endpoints use perpetual cost and accept optional product_id,
+page and per_page. Both permissions are provisioned for owner by RbacSeeder.
+
+The gross sales amount excludes full cancellations. Returns reduce sales once,
+using their effective date. Perpetual HPP deducts only inventory cost actually
+restored for resellable returns. A damaged return retains the original cost.
+A missing cost snapshot propagates null to HPP and dependent results.
+
+Periodic HPP uses received purchase lines and historical opening/closing
+inventory. A cutoff whose stock movement IDs cross the cutoff out of sequence,
+or whose nonzero balance lacks a valuation, returns null. Additional inventory
+movements are counted for reconciliation. Legacy operational_cost is reported
+as unclassified and blocks periodic HPP when present. Purchase return and
+discount workflows and separately recorded sales discounts remain pending.
+The report exposes capability flags and amounts refer to recorded data only.
+
+The report shows both HPP methods and uses the selected one to compute gross
+profit and simple net profit. Money uses integer Rupiah strings for transaction
+amounts and six-place Rupiah strings for valuation amounts. Profit and margin
+use null when inputs are incomplete. A zero net-sales denominator returns null.
+Accounting policy remains provisional. All computed reports require review.
+
+Expense creation accepts request_id (UUID), expense_date (YYYY-MM-DD), category,
+description and positive integer amount in Rupiah. Matching retries return the
+existing expense and conflicting requests using the same UUID return 409.
+Edits require the current version and at least one editable field or void=true.
+A stale version returns 409. Voided expenses are excluded from period totals
+and retain their version history, actor and timestamp.

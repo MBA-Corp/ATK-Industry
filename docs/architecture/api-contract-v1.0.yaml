@@ -954,33 +954,10 @@ paths:
           $ref: "#/components/responses/ValidationError"
 
   /api/v1/expenses:
-    get:
-      tags: [Expenses]
-      summary: List operating expenses
-      security:
-        - sanctum: []
-      parameters:
-        - $ref: "#/components/parameters/Page"
-        - $ref: "#/components/parameters/PerPage"
-        - name: from
-          in: query
-          schema: { type: string, format: date }
-        - name: to
-          in: query
-          schema: { type: string, format: date }
-        - name: category_id
-          in: query
-          schema: { type: integer, format: int64 }
-      responses:
-        "200":
-          description: Expenses
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExpenseCollectionResponse"
     post:
       tags: [Expenses]
-      summary: Create operating expense
+      summary: Create or replay an operating expense
+      description: Requires expense.manage.
       security:
         - sanctum: []
       requestBody:
@@ -988,16 +965,86 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ExpenseCreateRequest"
+              type: object
+              required: [request_id, expense_date, category, description, amount]
+              properties:
+                request_id: { type: string, format: uuid }
+                expense_date: { type: string, format: date }
+                category: { type: string, maxLength: 80 }
+                description: { type: string, maxLength: 255 }
+                amount: { type: integer, minimum: 1 }
       responses:
-        "201":
-          description: Expense created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExpenseSingleResponse"
+        "200":
+          description: Current expense revision
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
+
+  /api/v1/expenses/{expenseId}:
+    parameters:
+      - name: expenseId
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    get:
+      tags: [Expenses]
+      summary: Read an expense
+      description: Requires expense.manage.
+      security:
+        - sanctum: []
+      responses:
+        "200":
+          description: Current expense revision
+        "404":
+          description: Expense not found
+    patch:
+      tags: [Expenses]
+      summary: Edit or void an expense
+      description: Requires expense.manage.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version]
+              properties:
+                version: { type: integer, minimum: 1 }
+                expense_date: { type: string, format: date }
+                category: { type: string, maxLength: 80 }
+                description: { type: string, maxLength: 255 }
+                amount: { type: integer, minimum: 1 }
+                void: { type: boolean }
+      responses:
+        "200":
+          description: Updated expense revision
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/expenses/{expenseId}/history:
+    get:
+      tags: [Expenses]
+      summary: List immutable expense revisions
+      description: Requires expense.manage.
+      security:
+        - sanctum: []
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Paginated revisions with actor and timestamp
+        "404":
+          description: Expense not found
 
   /api/v1/reports/sales:
     get:
@@ -1171,27 +1218,151 @@ paths:
   /api/v1/reports/profit-loss:
     get:
       tags: [Reports]
-      summary: Profit and loss report
+      summary: Provisional profit and loss report
+      description: Requires report.profit.view. Amounts are exact Rupiah strings. Figures are provisional.
       security:
         - sanctum: []
       parameters:
-        - $ref: "#/components/parameters/FromDate"
-        - $ref: "#/components/parameters/ToDate"
-        - name: compare_from
+        - name: date_from
           in: query
+          required: true
           schema: { type: string, format: date }
-        - name: compare_to
+        - name: date_to
           in: query
+          required: true
           schema: { type: string, format: date }
+        - name: hpp_method
+          in: query
+          schema: { type: string, enum: [periodic, perpetual], default: perpetual }
       responses:
         "200":
-          description: Profit and loss
+          description: Financial report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProfitLossReportResponse"
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [net_sales, hpp, gross_profit, simple_net_profit, provisional, reconciliation_status]
+                    properties:
+                      net_sales: { type: string }
+                      hpp: { type: [string, 'null'] }
+                      gross_profit: { type: [string, 'null'] }
+                      simple_net_profit: { type: [string, 'null'] }
+                      provisional: { const: true }
+                      reconciliation_status: { enum: [incomplete, requires_review] }
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/reports/profit-loss/export:
+    get:
+      tags: [Reports]
+      summary: Export provisional profit and loss as CSV
+      description: Requires report.profit.view. Amounts are exact Rupiah strings. Figures are provisional.
+      security:
+        - sanctum: []
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: hpp_method
+          in: query
+          schema: { type: string, enum: [periodic, perpetual], default: perpetual }
+      responses:
+        "200":
+          description: Profit and loss CSV
+          content:
+            text/csv:
+              schema: { type: string }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/reports/margins/products:
+    get:
+      tags: [Reports]
+      summary: Snapshot margins by product
+      description: Requires report.profit.view. Amounts are exact Rupiah strings. Figures are provisional.
+      security:
+        - sanctum: []
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: product_id
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Financial report
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { type: object }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/reports/margins/transactions:
+    get:
+      tags: [Reports]
+      summary: Snapshot margins by transaction
+      description: Requires report.profit.view. Amounts are exact Rupiah strings. Figures are provisional.
+      security:
+        - sanctum: []
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: product_id
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Financial report
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { type: object }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /api/v1/reports/{reportType}/export:
     get:

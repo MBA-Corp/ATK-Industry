@@ -41,6 +41,8 @@ class RbacSeeder extends Seeder
 
         $permissions = [
             ['name' => 'View and Export Sales Reports', 'code' => 'report.sales.view'],
+            ['name' => 'View and Export Financial Reports', 'code' => 'report.profit.view'],
+            ['name' => 'Manage Operating Expenses', 'code' => 'expense.manage'],
             ['name' => 'Return Sale', 'code' => 'sale.return'],
             ['name' => 'Record Refund', 'code' => 'refund.record'],
             ['name' => 'Import Catalog', 'code' => 'catalog.import'],
