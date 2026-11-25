@@ -713,4 +713,23 @@ class PurchaseReceivingTest extends TestCase
         $this->assertDatabaseCount('purchase_receipts', 0);
         $this->assertDatabaseCount('stock_movements', 0);
     }
+
+    public function test_offset_receipt_uses_actual_received_quantity_in_the_matching_financial_day(): void
+    {
+        $user = $this->userWithPermission('purchase.receive');
+        $user->roles()->sole()->permissions()->attach(Permission::create([
+            'name' => 'View Financial Reports', 'code' => 'report.profit.view',
+        ]));
+        [$purchase, $item] = $this->purchaseWithOneItem($this->supplier());
+        $this->actingAs($user)->postJson("/api/v1/purchases/{$purchase->id}/receive", [
+            'received_at' => '2026-11-25T23:55:00+07:00',
+            'items' => [['purchase_item_id' => $item->id, 'qty_received' => '2']],
+        ])->assertOk();
+        $day = '/api/v1/reports/profit-loss?date_from=2026-11-25&date_to=2026-11-25&hpp_method=periodic';
+        $this->getJson($day)->assertOk()->assertJsonPath('data.gross_purchases', '10000')
+            ->assertJsonPath('data.closing_inventory', '10000.000000')
+            ->assertJsonPath('data.periodic_hpp', '0.000000');
+        $this->assertDatabaseHas('purchases', ['id' => $purchase->id, 'received_at' => '2026-11-25 16:55:00']);
+        $this->assertDatabaseHas('purchase_receipts', ['purchase_id' => $purchase->id, 'received_at' => '2026-11-25 16:55:00']);
+    }
 }

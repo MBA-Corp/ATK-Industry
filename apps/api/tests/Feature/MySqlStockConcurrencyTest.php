@@ -38,4 +38,43 @@ class MySqlStockConcurrencyTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 2);
         $this->assertDatabaseCount('inventory_valuations', 2);
     }
+
+    public function test_valuation_uses_current_cost_after_an_older_transaction_snapshot(): void
+    {
+        $existing = Product::create(['sku' => 'CURRENT-COST', 'name' => 'Existing value']);
+        $new = Product::create(['sku' => 'FIRST-COST', 'name' => 'First value']);
+        $apply = app(ApplyStockMovementAction::class);
+        $apply->execute($existing->id, 'OPENING', 'REVIEW', 1, '10', incomingValue: '1000');
+
+        config(['database.connections.cost_writer' => config('database.connections.mysql')]);
+        $reader = DB::connection('mysql');
+        $reader->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+        $reader->beginTransaction();
+        try {
+            $reader->table('inventory_costs')->count(); // Establish the reader's snapshot before the receipt.
+            DB::setDefaultConnection('cost_writer');
+            $apply->execute($existing->id, 'PURCHASE_RECEIPT', 'REVIEW', 2, '10', incomingValue: '2000');
+            $apply->execute($new->id, 'PURCHASE_RECEIPT', 'REVIEW', 3, '10', incomingValue: '900');
+
+            DB::setDefaultConnection('mysql');
+            $sale = $apply->execute($existing->id, 'SALE', 'REVIEW', 4, '-10');
+            $this->assertDatabaseHas('inventory_valuations', [
+                'stock_movement_id' => $sale->id, 'value_before' => '3000.000000', 'value_delta' => '-1500.000000',
+            ]);
+            $firstSale = $apply->execute($new->id, 'SALE', 'REVIEW', 5, '-1');
+            $reader->commit();
+        } finally {
+            DB::setDefaultConnection('mysql');
+            if ($reader->transactionLevel() > 0) {
+                $reader->rollBack();
+            }
+            DB::purge('cost_writer');
+        }
+
+        $this->assertDatabaseHas('inventory_costs', ['product_id' => $existing->id, 'inventory_value' => '1500.000000']);
+        $this->assertDatabaseHas('inventory_valuations', [
+            'stock_movement_id' => $firstSale->id, 'value_before' => '900.000000', 'value_delta' => '-90.000000',
+        ]);
+        $this->assertDatabaseHas('inventory_costs', ['product_id' => $new->id, 'inventory_value' => '810.000000']);
+    }
 }

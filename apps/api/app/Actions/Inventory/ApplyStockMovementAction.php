@@ -66,24 +66,13 @@ class ApplyStockMovementAction
                     ]);
                 }
 
-                InventoryBalance::query()
-                    ->firstOrCreate(
-                        [
-                            'product_id' => $productId,
-                        ],
-                        [
-                            'quantity_base' => 0,
-                        ]
-                    );
-
-                $balance =
-                    InventoryBalance::query()
-                        ->where(
-                            'product_id',
-                            $productId
-                        )
-                        ->lockForUpdate()
-                        ->firstOrFail();
+                $balance = InventoryBalance::query()
+                    ->where('product_id', $productId)
+                    ->lockForUpdate()
+                    ->first() ?? InventoryBalance::create([
+                        'product_id' => $productId,
+                        'quantity_base' => '0.000000',
+                    ]);
 
                 try {
                     $quantityBeforeFormatted = DecimalMath::normalize(

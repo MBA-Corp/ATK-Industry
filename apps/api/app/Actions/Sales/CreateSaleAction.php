@@ -7,6 +7,7 @@ use App\Models\ProductUnit;
 use App\Models\Sale;
 use App\Support\DecimalMath;
 use App\Support\MoneyMath;
+use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -131,8 +132,7 @@ class CreateSaleAction
                     ];
                 }
 
-                $soldAt = $validated['sold_at']
-                    ?? now();
+                $soldAt = CarbonImmutable::parse($validated['sold_at'] ?? now(), 'UTC')->utc();
                 $paymentTotal = 0;
                 try {
                     foreach ($validated['payments'] as $payment) {

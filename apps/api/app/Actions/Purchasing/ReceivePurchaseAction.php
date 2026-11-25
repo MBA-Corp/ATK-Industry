@@ -6,6 +6,7 @@ use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Models\Purchase;
 use App\Support\DecimalMath;
 use App\Support\MoneyMath;
+use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -56,9 +57,7 @@ class ReceivePurchaseAction
                     ->get()
                     ->keyBy('id');
 
-                $receivedAt =
-                    $validated['received_at']
-                    ?? now();
+                $receivedAt = CarbonImmutable::parse($validated['received_at'] ?? now(), 'UTC')->utc();
 
                 $receipt = $purchase
                     ->receipt()

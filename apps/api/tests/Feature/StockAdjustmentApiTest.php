@@ -641,4 +641,22 @@ class StockAdjustmentApiTest extends TestCase
 
         $this->assertDatabaseCount('stock_adjustments', 0);
     }
+
+    public function test_offset_adjustment_keeps_the_same_instant_in_the_stock_ledger(): void
+    {
+        $user = $this->userWithPermission();
+        [$product, $unit] = $this->product('ADJ-OFFSET');
+
+        $id = $this->actingAs($user)->postJson("/api/v1/inventory/{$product->id}/adjustments", [
+            'adjustment_type' => 'ADJUSTMENT',
+            'product_unit_id' => $unit->id,
+            'quantity' => '1',
+            'reason' => 'Synthetic offset adjustment',
+            'occurred_at' => '2026-11-25T23:55:00+07:00',
+        ])->assertCreated()->json('data.id');
+        $this->assertDatabaseHas('stock_adjustments', ['id' => $id, 'occurred_at' => '2026-11-25 16:55:00']);
+        $this->assertDatabaseHas('stock_movements', [
+            'source_type' => 'STOCK_ADJUSTMENT', 'source_id' => $id, 'occurred_at' => '2026-11-25 16:55:00',
+        ]);
+    }
 }

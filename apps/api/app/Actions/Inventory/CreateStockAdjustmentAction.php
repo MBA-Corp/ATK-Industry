@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\StockAdjustment;
 use App\Support\DecimalMath;
+use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -112,7 +113,7 @@ class CreateStockAdjustmentAction
                     ]);
                 }
 
-                $occurredAt = $validated['occurred_at'] ?? now();
+                $occurredAt = CarbonImmutable::parse($validated['occurred_at'] ?? now(), 'UTC')->utc();
 
                 $adjustment = StockAdjustment::create([
                     'adjustment_number' => $this->generateAdjustmentNumber(),

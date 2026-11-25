@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\Inventory\ApplyStockMovementAction;
 use App\Actions\Sales\CreateSaleAction;
 use App\Models\Product;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -97,5 +98,20 @@ class InventoryPlanningTest extends TestCase
             'demand_window_days' => 3, 'minimum_history_days' => 3,
             'quantity_step' => '1', 'minimum_stock' => '1', 'maximum_stock' => '3',
         ];
+    }
+
+    public function test_catalog_update_cannot_relabel_existing_base_stock_or_ledger(): void
+    {
+        [$owner, $product, $pcs] = $this->retailFixture();
+        $box = Unit::create(['code' => 'BOX', 'name' => 'Box', 'is_active' => true]);
+
+        $this->actingAs($owner)->patchJson("/api/v1/products/{$product->id}", [
+            'units' => [
+                ['id' => $pcs->id, 'unit_id' => $pcs->unit_id, 'conversion_to_base' => '0.1', 'selling_price' => 101, 'is_base' => false],
+                ['unit_id' => $box->id, 'conversion_to_base' => '1', 'selling_price' => 1010, 'is_base' => true],
+            ],
+        ])->assertUnprocessable()->assertJsonValidationErrors('units');
+        $this->assertTrue($pcs->fresh()->is_base);
+        $this->assertDatabaseHas('inventory_balances', ['product_id' => $product->id, 'quantity_base' => '7.000000']);
     }
 }
