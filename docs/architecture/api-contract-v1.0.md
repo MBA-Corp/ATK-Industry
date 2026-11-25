@@ -691,3 +691,46 @@ Companion implementation guide:
 ```text
 api-contract-v1.0.md
 ```
+
+## Daily Sales Reconciliation
+
+`GET /api/v1/reports/sales` returns paginated JSON. Append `/export` for CSV
+with the same grouping, filters, sort, and matching rows across all pages.
+Both require an active Sanctum session and `report.sales.view` (owner via
+`RbacSeeder`).
+
+| Parameter | Accepted values |
+|---|---|
+| `date_from`, `date_to` | Required YYYY-MM-DD, inclusive dates, at most 366 days |
+| `group_by` | `sku` (default), `day`, `unit` |
+| `product_id`, `product_sku`, `unit_code` | Exact optional snapshot filters |
+| `sort` | `report_date` (default), `net_sales`, `gross_sales`, `transaction_count`, `sales_line_count` |
+| `direction` | `asc` (default), `desc` |
+| `page`, `per_page` | JSON only, default 1 and 25, maximum 10000 and 100 respectively |
+
+The query uses Asia/Jakarta midnight inclusive and the midnight after the final
+date exclusive, converted to UTC. Days with no events are omitted.
+Completed sales use `completed_at`. Full cancellation restates the original
+sale day and appears in gross and cancellations, with zero net contribution.
+Subsequent cancellations can therefore change past daily reports. Returns use
+`returned_at` and the original line's allocated return amount. Recording the
+manual payout has no further effect on sales.
+
+`transaction_count` counts distinct non-cancelled sales within each group.
+`sales_line_count` counts their lines. `cancelled_transaction_count` counts
+distinct cancelled sales. Use `group_by=day` for distinct daily totals across
+SKUs. A multi-SKU or multi-unit sale can appear once in each matching group.
+
+`net_sales = gross_sales - cancellations - sales_returns`. Amounts are signed
+integer Rupiah strings. Gross uses stored selling prices before returns and
+cancellations. Price overrides are already reflected in line totals. The
+source has no separate sales discount amount. SKU and unit groupings use sale
+item snapshots. They return `sold_quantity_base`, `returned_quantity_base`,
+`cancelled_quantity_base` and `net_quantity_base` as six-place strings.
+Sold quantity excludes cancellations. Unit groups also return `unit_code`,
+`conversion_to_base` and the same four quantities in the original sales unit.
+Day groups omit quantities across products.
+
+CSV export is limited to 10,000 grouped rows per request. Narrow the date
+range or use filters if the endpoint returns 422 for the limit. The earlier
+summary/detail and PDF/XLSX paths in the specification remain proposals.
