@@ -21,13 +21,15 @@ Docker. Continue existing implementation; do not restart the original audit.
   historical cost, received purchases and freight, expense reconciliation,
   and fixed-lead-time safety stock with full calendar-day observations. Final
   accounting and historical demand policies remain pending business approval.
-- Current work: milestone A implemented and focused SQLite/MySQL tests pass
-  (4 tests / 47 assertions each). The API uses snapshot SKU/unit, owner-scoped
-  read/export, and Jakarta date bounds. Cancellation restates the original
-  day, while returns use their effective date. Export ignores pagination.
-- Additive migration 2026_11_26_090000 adds the completion-date report index.
-  It has run in isolated test databases. Next: full regression, review,
-  commit and open the stacked PR, then begin financial reporting.
+- Milestone A implementation 04b55eaf141404632eb80e987cb83257f205530a on feat/backend-sales-reporting.
+  SQLite 308 pass / 3 MySQL-only skip / 1083 assertions, MySQL 311 pass /
+  1094 assertions. Pint 206 files, platform requirements and Composer audit
+  passed. Focused tests: 4 / 47 assertions per engine.
+- Daily sales query, controller/request, route/RBAC, regression tests and
+  API Markdown/OpenAPI contract. Additive migration 2026_11_26_090000
+  adds a sales completion date index and ran in isolated test databases.
+- Cancellation restates the original day. Returns use effective date.
+  Next implementation: provisional financial reporting on top of milestone A.
 ## Repository / GitHub
 - Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.
