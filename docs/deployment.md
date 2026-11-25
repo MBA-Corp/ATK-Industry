@@ -114,6 +114,8 @@ Financial source fields for purchase returns, freight allocation and separate
 discounts still require approved workflows. Data with unknown historical cost
 is shown as unavailable. Accounting policy and the treatment of returns in
 stock demand require sign-off. Query ranges and exports are capped, and the
-sales completion query has a supporting index. Representative staging load and
+sales completion query has a supporting index. A MySQL plan on 10,000
+synthetic sales selected the completion-date index and the sale-item join index.
+Representative staging load and
 ledger cutoff performance remain unmeasured. Production readiness also depends
 on UAT, attachment restore verification and approval.

@@ -8,6 +8,8 @@ Docker. Continue existing implementation; do not restart the original audit.
 - Checkout restored to D:\Project\ATK-Industry. Started from clean
   feat/backend-returns-reporting at f606e208, with implementation fd9e1b0.
 - Current branch feat/backend-release-hardening, based on df99e86 (draft PR #30).
+  PR #31 is draft and stacked on #30. CI verified candidate HEAD d99e12e.
+  A later checkpoint-only commit records the verification.
 - Verified active GitHub login thallasff with upstream push/admin access.
   PRs #23–#27 are open. #23 is historical foundation from Lloyd-29.
   #24 includes #23's foundation commit. #25 is stacked on #24.
@@ -51,10 +53,16 @@ Docker. Continue existing implementation; do not restart the original audit.
 - Isolated MySQL 34-to-37 migration upgrade and RBAC seeding passed.
   Synthetic restore into a separate MySQL database matched 37 migrations,
   24 permissions, sample product and new expense/planning schema.
-- Next: verify the GitHub Actions run for the release branch. Before release,
-  approve accounting/source policies and return-demand policy, run UAT and
-  representative staging load/attachment restoration, approve production.
-  No production operation is authorized by this checkpoint.
+- GitHub Actions PR check passed: https://github.com/MBA-Corp/ATK-Industry/actions/runs/45718696643.
+  Synthetic MySQL EXPLAIN on 10,000 sales selected
+  sales_status_completed_at_index and sale_items_sale_product_index.
+  The example Jakarta day returned 24 sales for Rp2,400.
+- Release disposition: technical candidate for staging/UAT. Pending are
+  approved accounting/source policies, return-demand policy, representative
+  staging performance and attachment restore, UAT and production approval.
+  Exact next action: review PRs #28–#31 in dependency order, then rehearse a
+  representative staging restore and exercise the deployment.md UAT checklist
+  after obtaining access and approval for a staging environment.
 ## Repository / GitHub
 - Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.
