@@ -43,10 +43,18 @@ Docker. Continue existing implementation; do not restart the original audit.
   Additive migration 2026_11_26_110000 adds inventory planning policies.
   Return demand treatment and 95% service level remain provisional.
   Draft PR #30 is stacked on #29.
-- Milestone D WIP. Added isolated test-only Actions workflow, authorization
-  and API contract checks, backup/restore checklist and UAT. MySQL synthetic
-  dump restore passed with 37 migrations and 24 permissions. Next: full
-  Compose run, staged migration upgrade check and CI verification.
+- Milestone D implementation 6b9dc41b2404df781aadf625828be6e8ed0bab2d on feat/backend-release-hardening
+  (base draft PR #30). Exact CI Compose command exited 0 locally.
+  SQLite 319 pass / 3 MySQL-only skip / 1197 assertions. MySQL 322 pass /
+  1208 assertions. Pint 224 files, platform requirements, Composer audit
+  and 13 documented/authorized operations passed. Development liveness OK.
+- Isolated MySQL 34-to-37 migration upgrade and RBAC seeding passed.
+  Synthetic restore into a separate MySQL database matched 37 migrations,
+  24 permissions, sample product and new expense/planning schema.
+- Next: verify the GitHub Actions run for the release branch. Before release,
+  approve accounting/source policies and return-demand policy, run UAT and
+  representative staging load/attachment restoration, approve production.
+  No production operation is authorized by this checkpoint.
 ## Repository / GitHub
 - Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.
