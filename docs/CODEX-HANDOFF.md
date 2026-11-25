@@ -7,7 +7,7 @@ Docker. Continue existing implementation; do not restart the original audit.
 
 - Checkout restored to D:\Project\ATK-Industry. Started from clean
   feat/backend-returns-reporting at f606e208, with implementation fd9e1b0.
-- Current branch feat/backend-inventory-planning, based on 6d95521 (draft PR #29).
+- Current branch feat/backend-release-hardening, based on df99e86 (draft PR #30).
 - Verified active GitHub login thallasff with upstream push/admin access.
   PRs #23–#27 are open. #23 is historical foundation from Lloyd-29.
   #24 includes #23's foundation commit. #25 is stacked on #24.
@@ -42,7 +42,11 @@ Docker. Continue existing implementation; do not restart the original audit.
   pass / 1193 assertions, Pint 222 files and Composer platform/audit pass.
   Additive migration 2026_11_26_110000 adds inventory planning policies.
   Return demand treatment and 95% service level remain provisional.
-  Next: release hardening, operational rehearsal, and test-only CI.
+  Draft PR #30 is stacked on #29.
+- Milestone D WIP. Added isolated test-only Actions workflow, authorization
+  and API contract checks, backup/restore checklist and UAT. MySQL synthetic
+  dump restore passed with 37 migrations and 24 permissions. Next: full
+  Compose run, staged migration upgrade check and CI verification.
 ## Repository / GitHub
 - Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.

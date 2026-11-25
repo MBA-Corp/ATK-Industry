@@ -22,7 +22,7 @@ not implemented; Pending business validation = cannot be used as official accoun
 4. Partial returns, manual refunds, reversible cost snapshots — Implemented / Verified, fd9e1b0, PR #25.
 5. Provisional margin, periodic/perpetual HPP and audited operating expenses — Implemented / Verified. Explicit purchase freight, returns and discount source coverage and accounting approval remain pending.
 6. Provisional statistical safety stock, ROP, and soft overstock alerts — Implemented / Verified. Demand history and return treatment require business validation.
-7. Release regression, concurrency, security and operational review — Proposed.
+7. Release verification automation and isolated migration/restore rehearsal — Implemented / Verified locally. Staging load, UAT, accounting source coverage and production approval remain open.
 
 Dependencies: reports must reconcile returns; valuation hooks must cover all stock
 movements before any financial result can be considered complete. Opening valuation

@@ -22,6 +22,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./apps/api:/var/www/html
+      - ./docs/architecture:/var/www/contract:ro
     tmpfs:
       - /var/www/html/vendor
       - /var/www/html/storage
@@ -52,4 +53,6 @@ services:
       DB_CONNECTION=sqlite DB_DATABASE=:memory: php vendor/bin/phpunit --colors=never;
       php vendor/bin/phpunit --colors=never;
       php vendor/bin/pint --test;
-      composer check-platform-reqs"
+      composer check-platform-reqs;
+      composer audit --locked --no-interaction;
+      php tests/Support/verify-report-contract.php"

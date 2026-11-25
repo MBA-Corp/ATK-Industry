@@ -10,7 +10,8 @@ docker compose -p atk-verification -f compose.test.yaml down
 This standalone Compose project has a dedicated network and RAM-backed MySQL database,
 no published database port and no development volume. Credentials in this file are
 disposable fixtures only. The runner installs the lockfile and runs SQLite in-memory,
-then MySQL, Pint and platform checks. Test storage and vendor are separate tmpfs mounts.
+then MySQL, Pint, platform checks, Composer audit, and the reporting route
+contract check. Test storage and vendor are separate tmpfs mounts.
 Do not merge this Compose file with the development Compose file.
 Never use the development MySQL service for PHPUnit RefreshDatabase.
 
@@ -24,3 +25,5 @@ docker compose exec -T api composer audit --locked
 
 Full regression results and limitations are recorded in the milestone PR/roadmap.
 A green sequential suite does not establish concurrent correctness or production readiness.
+
+GitHub Actions runs the same disposable suite for backend pull requests.
