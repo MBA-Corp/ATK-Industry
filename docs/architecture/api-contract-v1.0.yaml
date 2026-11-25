@@ -6,7 +6,8 @@ info:
     API contract v1.0 untuk Retail POS & Inventory Management System.
     Backend: Laravel API. Frontend: React SPA.
     Authentication: Laravel Sanctum first-party SPA.
-    Money values pada API dikirim sebagai integer Rupiah (IDR), bukan float.
+    Transaction amounts use integer Rupiah. Sales reporting uses integer Rupiah strings.
+    Both are exact representations.
 servers:
   - url: http://localhost:8000
     description: Local development
@@ -995,6 +996,139 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExpenseSingleResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/reports/sales:
+    get:
+      tags: [Reports]
+      summary: Daily sales reconciliation
+      description: Requires report.sales.view. Date bounds are inclusive in Asia/Jakarta, up to 366 days.
+      security:
+        - sanctum: []
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: group_by
+          in: query
+          schema: { type: string, enum: [day, sku, unit], default: sku }
+        - name: product_id
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: product_sku
+          in: query
+          schema: { type: string, maxLength: 255 }
+        - name: unit_code
+          in: query
+          schema: { type: string, maxLength: 255 }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [report_date, net_sales, gross_sales, transaction_count, sales_line_count], default: report_date }
+        - name: direction
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 10000 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Paginated report rows. Amounts are integer Rupiah strings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, current_page, last_page, per_page, total]
+                properties:
+                  current_page: { type: integer }
+                  last_page: { type: integer }
+                  per_page: { type: integer }
+                  total: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [report_date, transaction_count, sales_line_count, cancelled_transaction_count, gross_sales, cancellations, sales_returns, net_sales]
+                      properties:
+                        report_date: { type: string, format: date }
+                        product_id: { type: integer }
+                        product_sku: { type: string }
+                        unit_code: { type: string }
+                        conversion_to_base: { type: string }
+                        transaction_count: { type: integer, minimum: 0 }
+                        sales_line_count: { type: integer, minimum: 0 }
+                        cancelled_transaction_count: { type: integer, minimum: 0 }
+                        gross_sales: { type: string }
+                        cancellations: { type: string }
+                        sales_returns: { type: string }
+                        net_sales: { type: string }
+                        sold_quantity_base: { type: string }
+                        returned_quantity_base: { type: string }
+                        cancelled_quantity_base: { type: string }
+                        net_quantity_base: { type: string }
+                        sold_quantity: { type: string }
+                        returned_quantity: { type: string }
+                        cancelled_quantity: { type: string }
+                        net_quantity: { type: string }
+        "401":
+          description: Authentication required
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/reports/sales/export:
+    get:
+      tags: [Reports]
+      summary: Download daily sales CSV
+      description: Requires report.sales.view. Date bounds are inclusive in Asia/Jakarta, up to 366 days. Up to 10000 grouped rows.
+      security:
+        - sanctum: []
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: group_by
+          in: query
+          schema: { type: string, enum: [day, sku, unit], default: sku }
+        - name: product_id
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: product_sku
+          in: query
+          schema: { type: string, maxLength: 255 }
+        - name: unit_code
+          in: query
+          schema: { type: string, maxLength: 255 }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [report_date, net_sales, gross_sales, transaction_count, sales_line_count], default: report_date }
+        - name: direction
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        "200":
+          description: Sales report CSV
+          content:
+            text/csv:
+              schema: { type: string }
+        "401":
+          description: Authentication required
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
 

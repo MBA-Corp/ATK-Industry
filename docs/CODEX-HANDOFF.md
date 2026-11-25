@@ -1,10 +1,35 @@
 # Codex persistent development checkpoint
 
-Updated 18 November 2026, Asia/Jakarta. Read FIRST, then verify git status/log and
+Updated 26 November 2026, Asia/Jakarta. Read FIRST, then verify git status/log and
 Docker. Continue existing implementation; do not restart the original audit.
 
+## Recovery — 26 November 2026 (Asia/Jakarta)
+
+- Checkout restored to D:\Project\ATK-Industry. Started from clean
+  feat/backend-returns-reporting at f606e208, with implementation fd9e1b0.
+- Current branch feat/backend-sales-reporting, stacked on PR #25.
+- Verified active GitHub login thallasff with upstream push/admin access.
+  PRs #23–#27 are open. #23 is historical foundation from Lloyd-29.
+  #24 includes #23's foundation commit. #25 is stacked on #24.
+  API verification confirms #23's source branch at 16db79a.
+  #26 is the v1.4 business draft. #27 is the owner's dashboard UI work.
+- Recovery baseline supplied by operator: SQLite 304 pass / 3 skip / 1036
+  assertions, MySQL 307 pass / 1047 assertions, Pint 201 files and platform checks
+  pass, 34 migrations applied, API health pass. Docker services observed up with
+  development MySQL healthy. Baseline regression was not repeated during recovery.
+- Draft backend requirements include effective-date sales/return recognition,
+  historical cost, received purchases and freight, expense reconciliation,
+  and fixed-lead-time safety stock with full calendar-day observations. Final
+  accounting and historical demand policies remain pending business approval.
+- Current work: milestone A implemented and focused SQLite/MySQL tests pass
+  (4 tests / 47 assertions each). The API uses snapshot SKU/unit, owner-scoped
+  read/export, and Jakarta date bounds. Cancellation restates the original
+  day, while returns use their effective date. Export ignores pagination.
+- Additive migration 2026_11_26_090000 adds the completion-date report index.
+  It has run in isolated test databases. Next: full regression, review,
+  commit and open the stacked PR, then begin financial reporting.
 ## Repository / GitHub
-- Path C:\Projects\ATK-Industry\ATK-Industry, backend apps/api.
+- Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.
 - Implementation HEAD fd9e1b0a4216ee72fe6ebb7dfc810b40f9f73cfe, pushed to origin.
   A subsequent handoff-only commit may be HEAD; git log is authoritative.
