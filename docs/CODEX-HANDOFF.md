@@ -7,7 +7,7 @@ Docker. Continue existing implementation; do not restart the original audit.
 
 - Checkout restored to D:\Project\ATK-Industry. Started from clean
   feat/backend-returns-reporting at f606e208, with implementation fd9e1b0.
-- Current branch feat/backend-sales-reporting, stacked on PR #25.
+- Current branch feat/backend-financial-reporting, based on c56c06b (PR #28).
 - Verified active GitHub login thallasff with upstream push/admin access.
   PRs #23–#27 are open. #23 is historical foundation from Lloyd-29.
   #24 includes #23's foundation commit. #25 is stacked on #24.
@@ -29,7 +29,11 @@ Docker. Continue existing implementation; do not restart the original audit.
   API Markdown/OpenAPI contract. Additive migration 2026_11_26_090000
   adds a sales completion date index and ran in isolated test databases.
 - Cancellation restates the original day. Returns use effective date.
-  Next implementation: provisional financial reporting on top of milestone A.
+  PR #28 is open and stacked on #25.
+- Milestone B WIP on feat/backend-financial-reporting. Added provisional
+  cost snapshot margins/period calculations and audited expenses. Planned check:
+  focused financial endpoint tests, unclassified freight handling, historical
+  valuation cutoff, contract, then full SQLite/MySQL and publish.
 ## Repository / GitHub
 - Path D:\Project\ATK-Industry, backend apps/api.
 - Branch feat/backend-returns-reporting, tracking origin/feat/backend-returns-reporting.

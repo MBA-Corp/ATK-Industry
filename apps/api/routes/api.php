@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\V1\CatalogImportController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
+use App\Http\Controllers\Api\V1\FinancialReportController;
 use App\Http\Controllers\Api\V1\InventoryController;
+use App\Http\Controllers\Api\V1\OperatingExpenseController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductSupplierController;
 use App\Http\Controllers\Api\V1\PurchaseController;
@@ -30,6 +32,18 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum', EnsureActiveUser::class])->group(function () {
+        Route::middleware('permission:report.profit.view')->group(function () {
+            Route::get('/reports/profit-loss', [FinancialReportController::class, 'show']);
+            Route::get('/reports/profit-loss/export', [FinancialReportController::class, 'export']);
+            Route::get('/reports/margins/products', [FinancialReportController::class, 'products']);
+            Route::get('/reports/margins/transactions', [FinancialReportController::class, 'transactions']);
+        });
+        Route::middleware('permission:expense.manage')->group(function () {
+            Route::post('/expenses', [OperatingExpenseController::class, 'store']);
+            Route::get('/expenses/{expenseId}', [OperatingExpenseController::class, 'show'])->whereNumber('expenseId');
+            Route::patch('/expenses/{expenseId}', [OperatingExpenseController::class, 'update'])->whereNumber('expenseId');
+            Route::get('/expenses/{expenseId}/history', [OperatingExpenseController::class, 'history'])->whereNumber('expenseId');
+        });
         Route::get('/reports/sales', [SalesReportController::class, 'index'])->middleware('permission:report.sales.view');
         Route::get('/reports/sales/export', [SalesReportController::class, 'export'])->middleware('permission:report.sales.view');
         Route::post('/sales/{saleId}/returns', [SaleReturnController::class, 'store'])->middleware('permission:sale.return');
