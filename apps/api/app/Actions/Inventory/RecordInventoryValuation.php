@@ -12,7 +12,7 @@ class RecordInventoryValuation
     // Called only inside ApplyStockMovementAction's transaction/product lock.
     public function execute(StockMovement $movement, ?string $incomingValue = null): void
     {
-        $row = DB::table('inventory_costs')->where('product_id', $movement->product_id)->first();
+        $row = DB::table('inventory_costs')->where('product_id', $movement->product_id)->lockForUpdate()->first();
         $before = bccomp($movement->quantity_before_base, '0', 6) === 0
             ? '0.000000' : ($row?->inventory_value);
         $delta = null;
@@ -44,10 +44,13 @@ class RecordInventoryValuation
         if (bccomp($movement->quantity_after_base, '0', 6) === 0) {
             $after = '0.000000';
         }
-        DB::table('inventory_costs')->updateOrInsert(
-            ['product_id' => $movement->product_id],
-            ['inventory_value' => $after, 'updated_at' => now(), 'created_at' => $row?->created_at ?? now()],
-        );
+        $recordedAt = now();
+        DB::table('inventory_costs')->upsert([[
+            'product_id' => $movement->product_id,
+            'inventory_value' => $after,
+            'created_at' => $recordedAt,
+            'updated_at' => $recordedAt,
+        ]], ['product_id'], ['inventory_value', 'updated_at']);
         DB::table('inventory_valuations')->insert([
             'stock_movement_id' => $movement->id,
             'value_before' => $before,

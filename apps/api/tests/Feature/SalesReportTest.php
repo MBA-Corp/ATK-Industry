@@ -125,4 +125,23 @@ class SalesReportTest extends TestCase
             'payments' => [['payment_method' => 'CASH', 'amount' => $amount]],
         ], $owner->id);
     }
+
+    public function test_offset_checkout_keeps_sale_and_ledger_on_the_same_jakarta_day(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 24)->setTime(12, 0, 0));
+        [$owner, , $unit, $sale] = $this->retailFixture();
+        $this->actingAs($owner);
+        $id = $this->postJson('/api/v1/sales', [
+            'terminal_id' => $sale->terminal_id,
+            'sold_at' => '2026-11-25T23:55:00+07:00',
+            'items' => [['product_unit_id' => $unit->id, 'quantity' => '1']],
+            'payments' => [['payment_method' => 'CASH', 'amount' => 101]],
+        ])->assertCreated()->json('data.id');
+
+        $this->getJson(self::PATH.'?date_from=2026-11-25&date_to=2026-11-25')
+            ->assertOk()->assertJsonPath('data.0.net_sales', '101');
+        $this->getJson(self::PATH.self::RANGE)->assertOk()->assertJsonPath('total', 0);
+        $this->assertDatabaseHas('sales', ['id' => $id, 'completed_at' => '2026-11-25 16:55:00']);
+        $this->assertDatabaseHas('stock_movements', ['source_type' => 'SALE_ITEM', 'occurred_at' => '2026-11-25 16:55:00']);
+    }
 }

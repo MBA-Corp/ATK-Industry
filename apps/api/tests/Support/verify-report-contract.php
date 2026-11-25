@@ -11,6 +11,9 @@ $app->make(Kernel::class)->bootstrap();
 $contract = Yaml::parseFile($argv[1] ?? '/var/www/contract/api-contract-v1.0.yaml');
 $routes = $app['router']->getRoutes();
 $operations = [
+    ['POST', 'sales/{saleId}/returns', 'sale.return'],
+    ['GET', 'sale-returns/{returnId}', 'sale.return'],
+    ['POST', 'sale-returns/{returnId}/refund', 'refund.record'],
     ['GET', 'reports/sales', 'report.sales.view'],
     ['GET', 'reports/sales/export', 'report.sales.view'],
     ['GET', 'reports/profit-loss', 'report.profit.view'],
@@ -43,4 +46,4 @@ foreach ($operations as [$method, $resource, $permission]) {
     }
 }
 
-echo 'Reporting and expense route contract verified ('.count($operations)." operations).\n";
+echo 'Reporting, expense, and return route contract verified ('.count($operations)." operations).\n";

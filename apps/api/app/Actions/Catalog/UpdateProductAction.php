@@ -87,6 +87,18 @@ class UpdateProductAction
             ->get()
             ->keyBy('id');
 
+        $currentBase = $existingUnits->firstWhere('is_base', true);
+        $requestedBase = collect($units)->first(fn (array $unit) => (bool) $unit['is_base']);
+        if ($currentBase !== null && $requestedBase !== null
+            && (int) $currentBase->unit_id !== (int) $requestedBase['unit_id']
+            && ($product->stockMovements()->exists()
+                || $product->inventoryBalance()->where('quantity_base', '<>', 0)->exists()
+                || DB::table('inventory_planning_policies')->where('product_id', $product->id)->exists())) {
+            throw ValidationException::withMessages([
+                'units' => 'The base unit cannot change while this product has stock, stock history, or a planning policy.',
+            ]);
+        }
+
         $keptIds = [];
 
         foreach ($units as $index => $unitData) {
